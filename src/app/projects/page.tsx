@@ -1,48 +1,49 @@
-import { PageHeader } from '@/components/page-header';
-import { ProjectCard, type Project } from '@/components/project-card';
 
-const projectsData: Project[] = [
-  {
-    id: '1',
-    title: 'E-commerce Platform',
-    description: 'A full-featured e-commerce platform built with Next.js, Stripe, and a modern backend. Includes product listings, cart functionality, and user authentication.',
+import { PageHeader } from '@/components/page-header';
+import { ProjectCard } from '@/components/project-card';
+import type { Project } from '@/types'; // Ensure Project type includes id
+import { getFirestore, collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { app } from '@/lib/firebase';
+
+async function getProjects(): Promise<Project[]> {
+  if (!app) {
+    console.error("Firebase app is not initialized for Projects page.");
+    return [];
+  }
+  const db = getFirestore(app);
+  const projectsCollection = collection(db, 'projects');
+  // Order by 'createdAt' in descending order to show newest projects first
+  // Make sure you have an index for 'createdAt' in Firestore if you get an error.
+  const q = query(projectsCollection, orderBy('createdAt', 'desc'));
+  try {
+    const querySnapshot = await getDocs(q);
+    const projects = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...(doc.data() as Omit<Project, 'id'>),
+    }));
+    return projects;
+  } catch (error) {
+    console.error("Error fetching projects from Firestore:", error);
+    return []; // Return empty array on error
+  }
+}
+
+const defaultProjects: Project[] = [
+   {
+    id: 'fallback-1',
+    title: 'E-commerce Platform (Sample)',
+    description: 'A full-featured e-commerce platform. (Data from Firestore failed to load)',
     imageUrl: 'https://placehold.co/600x400.png',
     imageHint: 'online store',
-    tags: ['Next.js', 'React', 'TypeScript', 'Stripe', 'Tailwind CSS'],
-    liveDemoUrl: '#',
-    repoUrl: '#',
-  },
-  {
-    id: '2',
-    title: 'Task Management App',
-    description: 'A collaborative task management application designed for teams. Features include drag-and-drop boards, real-time updates, and notification systems.',
-    imageUrl: 'https://placehold.co/600x400.png',
-    imageHint: 'productivity app',
-    tags: ['React', 'Firebase', 'Node.js', 'Material UI'],
-    liveDemoUrl: '#',
-  },
-  {
-    id: '3',
-    title: 'Personal Portfolio Website',
-    description: 'This very portfolio! Built to showcase my skills and projects using Next.js and ShadCN UI components for a sleek, professional look.',
-    imageUrl: 'https://placehold.co/600x400.png',
-    imageHint: 'portfolio website',
-    tags: ['Next.js', 'ShadCN UI', 'Tailwind CSS', 'TypeScript'],
-    repoUrl: '#',
-  },
-  {
-    id: '4',
-    title: 'Weather Dashboard',
-    description: 'A responsive weather dashboard that provides real-time weather information for any city using a third-party API. Features dynamic charts and intuitive UI.',
-    imageUrl: 'https://placehold.co/600x400.png',
-    imageHint: 'weather forecast',
-    tags: ['Vue.js', 'OpenWeatherMap API', 'Chart.js', 'Bootstrap'],
-    liveDemoUrl: '#',
-    repoUrl: '#',
+    tags: ['Next.js', 'React'],
   },
 ];
 
-export function ProjectsSection() {
+export async function ProjectsSection() {
+  const projectsData = await getProjects();
+  const displayProjects = projectsData.length > 0 ? projectsData : defaultProjects;
+
+
   return (
     <>
       <PageHeader
@@ -50,11 +51,17 @@ export function ProjectsSection() {
         description="A collection of projects I've worked on, showcasing my skills and passion for development."
       />
       <div className="container py-12 md:py-16">
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {projectsData.map((project) => (
-            <ProjectCard key={project.id} project={project} />
-          ))}
-        </div>
+        {displayProjects.length === 0 && !projectsData.length ? ( // Only show if default is also empty (which it isn't now)
+             <div className="text-center py-10">
+                <p className="text-xl text-muted-foreground">No projects found. Add some from the admin panel!</p>
+            </div>
+        ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {displayProjects.map((project) => (
+                <ProjectCard key={project.id} project={project} />
+            ))}
+            </div>
+        )}
       </div>
     </>
   );

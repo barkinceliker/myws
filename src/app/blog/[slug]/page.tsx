@@ -1,103 +1,14 @@
+
 import { PageHeader } from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
-import { CalendarDays } from 'lucide-react';
+import { CalendarDays, ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-
-// Sample data - in a real app, this would come from a CMS or database
-const blogPosts = {
-  'mastering-react-hooks': {
-    title: 'Mastering React Hooks: A Deep Dive',
-    date: 'November 15, 2023',
-    author: '[Your Name]',
-    tags: ['React', 'JavaScript', 'Web Development'],
-    imageUrl: 'https://placehold.co/1200x600.png',
-    imageHint: 'code screen',
-    content: `
-      <p class="text-lg leading-relaxed mb-6">React Hooks have revolutionized how we write components, offering a more direct API to React’s features. This post will take you on a deep dive into some of the most commonly used hooks and how to leverage them effectively.</p>
-      <h2 class="font-headline text-2xl font-semibold mt-8 mb-4">Understanding useState</h2>
-      <p class="text-lg leading-relaxed mb-6">The <code>useState</code> hook is fundamental for adding state to functional components. It returns a stateful value and a function to update it. We'll explore common patterns and pitfalls.</p>
-      <pre class="bg-muted p-4 rounded-md overflow-x-auto text-sm mb-6"><code class="font-code">
-import React, { useState } from 'react';
-
-function Counter() {
-  const [count, setCount] = useState(0);
-
-  return (
-    &lt;div&gt;
-      &lt;p&gt;You clicked {count} times&lt;/p&gt;
-      &lt;button onClick={() => setCount(count + 1)}&gt;
-        Click me
-      &lt;/button&gt;
-    &lt;/div&gt;
-  );
-}
-      </code></pre>
-      <h2 class="font-headline text-2xl font-semibold mt-8 mb-4">Side Effects with useEffect</h2>
-      <p class="text-lg leading-relaxed mb-6"><code>useEffect</code> lets you perform side effects in function components. This includes data fetching, subscriptions, or manually changing the DOM. We'll discuss its dependency array and cleanup functions.</p>
-      <h2 class="font-headline text-2xl font-semibold mt-8 mb-4">Sharing State with useContext</h2>
-      <p class="text-lg leading-relaxed mb-6"><code>useContext</code> provides a way to pass data through the component tree without having to pass props down manually at every level. It's perfect for theming or global state.</p>
-      <h2 class="font-headline text-2xl font-semibold mt-8 mb-4">Building Custom Hooks</h2>
-      <p class="text-lg leading-relaxed mb-6">Custom Hooks allow you to extract component logic into reusable functions. This is a powerful way to share stateful logic between components.</p>
-      <p class="text-lg leading-relaxed mb-6">By mastering these hooks, you can write more efficient, readable, and maintainable React applications. Stay tuned for more advanced topics!</p>
-    `,
-  },
-  'tailwind-css-best-practices': {
-    title: 'Tailwind CSS Best Practices for Scalable Projects',
-    date: 'October 28, 2023',
-    author: '[Your Name]',
-    tags: ['Tailwind CSS', 'CSS', 'Frontend'],
-    imageUrl: 'https://placehold.co/1200x600.png',
-    imageHint: 'css code',
-    content: `
-      <p class="text-lg leading-relaxed mb-6">Tailwind CSS is a utility-first CSS framework that has gained immense popularity. However, without proper practices, it can lead to cluttered templates. This post covers best practices for scalable projects.</p>
-      <h2 class="font-headline text-2xl font-semibold mt-8 mb-4">Configuration is Key</h2>
-      <p class="text-lg leading-relaxed mb-6">Leverage Tailwind's <code>tailwind.config.js</code> to customize your design system. Define your color palette, spacing scale, fonts, and breakpoints to ensure consistency.</p>
-      <h2 class="font-headline text-2xl font-semibold mt-8 mb-4">Component-Based Styling with @apply</h2>
-      <p class="text-lg leading-relaxed mb-6">For repeated utility combinations, use the <code>@apply</code> directive in your CSS to create component classes. This keeps your HTML clean while still benefiting from Tailwind's utilities.</p>
-      <h2 class="font-headline text-2xl font-semibold mt-8 mb-4">Purging Unused Styles</h2>
-      <p class="text-lg leading-relaxed mb-6">Ensure your production builds are optimized by configuring PurgeCSS (or Tailwind's built-in JIT mode) to remove unused styles, resulting in smaller file sizes.</p>
-      <p class="text-lg leading-relaxed mb-6">Following these practices will help you build maintainable and scalable applications with Tailwind CSS.</p>
-    `,
-  },
-   'introduction-to-serverless-architecture': {
-    title: 'An Introduction to Serverless Architecture',
-    date: 'September 05, 2023',
-    author: '[Your Name]',
-    tags: ['Serverless', 'Cloud Computing', 'Architecture'],
-    imageUrl: 'https://placehold.co/1200x600.png',
-    imageHint: 'cloud infrastructure',
-    content: `
-      <p class="text-lg leading-relaxed mb-6">Serverless architecture allows developers to build and run applications without managing servers. This post introduces the core concepts.</p>
-      <h2 class="font-headline text-2xl font-semibold mt-8 mb-4">What is Serverless?</h2>
-      <p class="text-lg leading-relaxed mb-6">Despite the name, servers are still involved. However, the cloud provider manages the server infrastructure, and developers only focus on writing code for functions that respond to events.</p>
-      <h2 class="font-headline text-2xl font-semibold mt-8 mb-4">Benefits of Serverless</h2>
-      <p class="text-lg leading-relaxed mb-6">Key benefits include cost-effectiveness (pay-per-use), scalability, and reduced operational overhead.</p>
-      <h2 class="font-headline text-2xl font-semibold mt-8 mb-4">Use Cases</h2>
-      <p class="text-lg leading-relaxed mb-6">Serverless is great for APIs, data processing, IoT backends, and more. Popular platforms include AWS Lambda, Google Cloud Functions, and Azure Functions.</p>
-      <p class="text-lg leading-relaxed mb-6">Serverless is transforming how applications are built and deployed in the cloud.</p>
-    `,
-  },
-  'the-art-of-api-design': {
-    title: 'The Art of API Design: Principles and Patterns',
-    date: 'August 20, 2023',
-    author: '[Your Name]',
-    tags: ['API Design', 'Backend', 'Software Engineering'],
-    imageUrl: 'https://placehold.co/1200x600.png',
-    imageHint: 'api data',
-    content: `
-      <p class="text-lg leading-relaxed mb-6">Designing a good API is crucial for the success of any software product. This post explores key principles and patterns.</p>
-      <h2 class="font-headline text-2xl font-semibold mt-8 mb-4">Simplicity and Intuitiveness</h2>
-      <p class="text-lg leading-relaxed mb-6">APIs should be easy to understand and use. Follow consistent naming conventions and provide clear documentation.</p>
-      <h2 class="font-headline text-2xl font-semibold mt-8 mb-4">RESTful Conventions</h2>
-      <p class="text-lg leading-relaxed mb-6">For web APIs, adhering to REST principles (using HTTP methods correctly, proper status codes) is standard practice.</p>
-      <h2 class="font-headline text-2xl font-semibold mt-8 mb-4">Versioning and Error Handling</h2>
-      <p class="text-lg leading-relaxed mb-6">Plan for API evolution with a clear versioning strategy. Implement comprehensive error handling with informative messages.</p>
-      <p class="text-lg leading-relaxed mb-6">Good API design is an art that balances functionality with usability.</p>
-    `,
-  }
-};
+import { getFirestore, collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { app } from '@/lib/firebase';
+import type { BlogPost } from '@/types';
+import { format } from 'date-fns';
 
 type PostPageProps = {
   params: {
@@ -105,25 +16,79 @@ type PostPageProps = {
   };
 };
 
-export async function generateStaticParams() {
-  return Object.keys(blogPosts).map((slug) => ({
-    slug,
-  }));
+async function getPostBySlug(slug: string): Promise<BlogPost | null> {
+  if (!app) {
+    console.error("Firebase app is not initialized for individual blog post page.");
+    return null;
+  }
+  const db = getFirestore(app);
+  const postsCollection = collection(db, 'blogPosts');
+  const q = query(postsCollection, where('slug', '==', slug));
+  
+  try {
+    const querySnapshot = await getDocs(q);
+    if (querySnapshot.empty) {
+      console.log(`No blog post found with slug: ${slug}`);
+      return null;
+    }
+    const doc = querySnapshot.docs[0];
+    const data = doc.data() as Omit<BlogPost, 'id' | 'publicationDate'> & { createdAt?: Timestamp, publicationDate?: string | Timestamp };
+    
+    let formattedPublicationDate = 'Date not set';
+    if (data.publicationDate) {
+      if (typeof data.publicationDate === 'string') {
+        try {
+          formattedPublicationDate = format(new Date(data.publicationDate), 'MMMM dd, yyyy');
+        } catch(e) {
+           formattedPublicationDate = data.publicationDate; // show as is if invalid
+        }
+      } else if (data.publicationDate instanceof Timestamp) {
+        formattedPublicationDate = format(data.publicationDate.toDate(), 'MMMM dd, yyyy');
+      }
+    } else if (data.createdAt) {
+      formattedPublicationDate = format(data.createdAt.toDate(), 'MMMM dd, yyyy');
+    }
+
+    return {
+      id: doc.id,
+      ...data,
+      publicationDate: formattedPublicationDate,
+      tags: Array.isArray(data.tags) ? data.tags : [],
+    } as BlogPost;
+  } catch (error) {
+    console.error(`Error fetching post with slug ${slug}:`, error);
+    return null;
+  }
 }
 
-export default function BlogPostPage({ params }: PostPageProps) {
+// export async function generateStaticParams() {
+//   if (!app) return [];
+//   const db = getFirestore(app);
+//   const postsCollection = collection(db, 'blogPosts');
+//   const snapshot = await getDocs(postsCollection);
+//   return snapshot.docs.map(doc => ({
+//     slug: doc.data().slug || doc.id,
+//   }));
+// }
+// Disabling generateStaticParams for now to simplify and ensure dynamic fetching works first.
+// Re-enable with proper slug handling if static generation is a priority.
+
+
+export default async function BlogPostPage({ params }: PostPageProps) {
   const { slug } = params;
-  const post = blogPosts[slug as keyof typeof blogPosts];
+  const post = await getPostBySlug(slug);
 
   if (!post) {
     return (
-      <div className="container py-12 text-center">
-        <h1 className="font-headline text-4xl text-destructive">Post not found</h1>
-        <p className="mt-4 text-lg">The blog post you are looking for does not exist.</p>
-        <Button asChild variant="link" className="mt-6">
-            <Link href="/blog">Back to Blog</Link>
-        </Button>
-      </div>
+      <>
+        <PageHeader title="Post Not Found" />
+        <div className="container py-12 text-center">
+          <p className="mt-4 text-lg text-muted-foreground">The blog post you are looking for (slug: {slug}) does not exist or could not be loaded.</p>
+          <Button asChild variant="outline" className="mt-8">
+            <Link href="/blog"> <ArrowLeft className="mr-2 h-4 w-4" /> Back to Blog Overview</Link>
+          </Button>
+        </div>
+      </>
     );
   }
 
@@ -135,18 +100,28 @@ export default function BlogPostPage({ params }: PostPageProps) {
           <div className="mb-8">
             <div className="flex items-center text-muted-foreground mb-4">
               <CalendarDays className="h-5 w-5 mr-2" />
-              <span>Published on {post.date} by {post.author}</span>
+              <span>
+                Published on {post.publicationDate}
+                {post.author && ` by ${post.author}`}
+              </span>
             </div>
-            {post.tags && (
+            {post.tags && post.tags.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-6">
                 {post.tags.map(tag => (
-                  <Badge key={tag} variant="secondary">{tag}</Badge>
+                  <Badge key={tag} variant="secondary" className="shadow-sm">{tag}</Badge>
                 ))}
               </div>
             )}
             {post.imageUrl && (
-                <div className="relative w-full aspect-video rounded-lg overflow-hidden shadow-lg mb-8">
-                    <Image src={post.imageUrl} alt={post.title} fill className="object-cover" data-ai-hint={post.imageHint || "blog header"}/>
+                <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden shadow-lg mb-8">
+                    <Image 
+                        src={post.imageUrl} 
+                        alt={post.title} 
+                        fill 
+                        className="object-cover" 
+                        data-ai-hint={post.imageHint || "blog header"}
+                        priority
+                    />
                 </div>
             )}
           </div>
@@ -154,8 +129,8 @@ export default function BlogPostPage({ params }: PostPageProps) {
           <div dangerouslySetInnerHTML={{ __html: post.content }} />
         </article>
         <div className="mt-12 text-center">
-            <Button asChild variant="outline" className="transition-colors hover:bg-accent hover:text-accent-foreground">
-                <Link href="/blog">Back to Blog Overview</Link>
+            <Button asChild variant="outline" className="transition-colors hover:bg-accent hover:text-accent-foreground shadow-md">
+                <Link href="/blog"> <ArrowLeft className="mr-2 h-4 w-4" /> Back to Blog Overview</Link>
             </Button>
         </div>
       </div>

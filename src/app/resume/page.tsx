@@ -1,74 +1,76 @@
+
 import { PageHeader } from '@/components/page-header';
 import { TimelineItem } from '@/components/timeline-item';
 import { Briefcase, GraduationCap, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { getFirestore, collection, getDocs, query, orderBy, Timestamp } from 'firebase/firestore';
+import { app } from '@/lib/firebase';
+import type { ExperienceItem, EducationItem } from '@/types'; // Ensure these types match Firestore structure
+import { format } from 'date-fns'; // For formatting dates (optional here, could be done in admin)
 
-interface Experience {
-  role: string;
-  company: string;
-  dateRange: string;
-  responsibilities: string[];
+async function getResumeData(): Promise<{ experiences: ExperienceItem[], education: EducationItem[] }> {
+  if (!app) {
+    console.error("Firebase app is not initialized for Resume page.");
+    return { experiences: [], education: [] };
+  }
+  const db = getFirestore(app);
+  
+  const experiencesData: ExperienceItem[] = [];
+  const educationData: EducationItem[] = [];
+
+  try {
+    // Fetch Experiences
+    const expCollection = collection(db, 'experiences');
+    // Assuming 'createdAt' or a specific 'order' field for sorting.
+    // If you use 'dateRange' for sorting, ensure it's consistently formatted or use Timestamps.
+    const expQuery = query(expCollection, orderBy('createdAt', 'desc')); // Or 'dateRange' if you manage its sorting
+    const expSnapshot = await getDocs(expQuery);
+    expSnapshot.forEach(doc => {
+      experiencesData.push({ id: doc.id, ...(doc.data() as Omit<ExperienceItem, 'id'>) });
+    });
+
+    // Fetch Education
+    const eduCollection = collection(db, 'educationItems');
+    const eduQuery = query(eduCollection, orderBy('createdAt', 'desc')); // Or 'dateRange'
+    const eduSnapshot = await getDocs(eduQuery);
+    eduSnapshot.forEach(doc => {
+      educationData.push({ id: doc.id, ...(doc.data() as Omit<EducationItem, 'id'>) });
+    });
+
+  } catch (error) {
+    console.error("Error fetching resume data from Firestore:", error);
+  }
+  
+  return { experiences: experiencesData, education: educationData };
 }
 
-interface Education {
-  degree: string;
-  institution: string;
-  dateRange: string;
-  details: string;
-}
-
-const experiences: Experience[] = [
+const defaultExperience: ExperienceItem[] = [
   {
-    role: 'Senior Frontend Developer',
-    company: 'Tech Solutions Inc.',
-    dateRange: 'Jan 2021 - Present',
-    responsibilities: [
-      'Led the development of scalable web applications using React, Next.js, and TypeScript.',
-      'Collaborated with UX/UI designers to implement responsive and accessible user interfaces.',
-      'Mentored junior developers and conducted code reviews to maintain code quality.',
-      'Improved application performance by 20% through code optimization and modern techniques.',
-    ],
-  },
-  {
-    role: 'Full Stack Developer',
-    company: 'Innovatech Ltd.',
-    dateRange: 'Jun 2018 - Dec 2020',
-    responsibilities: [
-      'Developed and maintained full-stack applications using Node.js, Express, and React.',
-      'Designed and implemented RESTful APIs for various client projects.',
-      'Worked in an Agile environment, participating in sprint planning and daily stand-ups.',
-      'Contributed to database design and management using PostgreSQL and MongoDB.',
-    ],
-  },
-  {
-    role: 'Junior Web Developer',
-    company: 'Web Wizards Co.',
-    dateRange: 'Jul 2016 - May 2018',
-    responsibilities: [
-      'Assisted in developing and testing websites for small to medium-sized businesses.',
-      'Gained proficiency in HTML, CSS, JavaScript, and jQuery.',
-      'Learned version control with Git and collaborated on projects using GitHub.',
-    ],
+    id: 'exp-fallback',
+    role: 'Senior Developer (Sample)',
+    company: 'Tech Solutions (Sample)',
+    dateRange: 'Jan 2022 - Present',
+    responsibilities: ['Led development of web apps.', 'Mentored junior developers.'],
   },
 ];
 
-const education: Education[] = [
+const defaultEducation: EducationItem[] = [
   {
-    degree: 'Master of Science in Computer Science',
-    institution: 'University of Advanced Technology',
-    dateRange: '2014 - 2016',
-    details: 'Specialized in Software Engineering and Human-Computer Interaction. Thesis on "Efficient UI Design Patterns".',
-  },
-  {
-    degree: 'Bachelor of Science in Information Technology',
-    institution: 'State University',
-    dateRange: '2010 - 2014',
-    details: 'Graduated with honors. Active member of the coding club and participated in several hackathons.',
+    id: 'edu-fallback',
+    degree: 'MSc Computer Science (Sample)',
+    institution: 'University of Technology (Sample)',
+    dateRange: '2020 - 2022',
+    details: 'Specialized in AI.',
   },
 ];
 
-export function ResumeSection() {
+
+export async function ResumeSection() {
+  const { experiences, education } = await getResumeData();
+  const displayExperiences = experiences.length > 0 ? experiences : defaultExperience;
+  const displayEducation = education.length > 0 ? education : defaultEducation;
+
   return (
     <>
       <PageHeader
@@ -77,8 +79,8 @@ export function ResumeSection() {
       />
       <div className="container py-12 md:py-16">
         <div className="text-center mb-12">
-           <Button asChild size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 transition-transform hover:scale-105">
-            {/* Replace with actual link to your resume PDF */}
+           <Button asChild size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 transition-transform hover:scale-105 shadow-md">
+            {/* Replace with actual link to your resume PDF, maybe from Firestore too? */}
             <Link href="/placeholder-resume.pdf" target="_blank" download="YourName_Resume.pdf">
               <Download className="mr-2 h-5 w-5" />
               Download Resume (PDF)
@@ -92,19 +94,25 @@ export function ResumeSection() {
             <Briefcase className="mr-4 h-8 w-8 text-accent" />
             Professional Experience
           </h2>
-          <div className="space-y-0"> {/* Adjusted space-y for timeline look */}
-            {experiences.map((exp, index) => (
-              <TimelineItem
-                key={exp.company}
-                title={exp.role}
-                subtitle={exp.company}
-                dateRange={exp.dateRange}
-                description={exp.responsibilities}
-                icon={<Briefcase size={18} />}
-                isLast={index === experiences.length - 1}
-              />
-            ))}
-          </div>
+          {displayExperiences.length === 0 && !experiences.length ? (
+             <div className="text-center py-6">
+                <p className="text-lg text-muted-foreground">No professional experience listed yet. Add some from the admin panel!</p>
+            </div>
+          ) : (
+            <div className="space-y-0">
+                {displayExperiences.map((exp, index) => (
+                <TimelineItem
+                    key={exp.id}
+                    title={exp.role}
+                    subtitle={exp.company}
+                    dateRange={exp.dateRange}
+                    description={exp.responsibilities} // This is already an array of strings
+                    icon={<Briefcase size={18} />}
+                    isLast={index === displayExperiences.length - 1}
+                />
+                ))}
+            </div>
+          )}
         </section>
 
         {/* Education Section */}
@@ -113,19 +121,25 @@ export function ResumeSection() {
             <GraduationCap className="mr-4 h-8 w-8 text-accent" />
             Education
           </h2>
-          <div className="space-y-0"> {/* Adjusted space-y for timeline look */}
-            {education.map((edu, index) => (
-              <TimelineItem
-                key={edu.institution}
-                title={edu.degree}
-                subtitle={edu.institution}
-                dateRange={edu.dateRange}
-                description={edu.details}
-                icon={<GraduationCap size={18} />}
-                isLast={index === education.length - 1}
-              />
-            ))}
-          </div>
+           {displayEducation.length === 0 && !education.length ? (
+             <div className="text-center py-6">
+                <p className="text-lg text-muted-foreground">No education history listed yet. Add some from the admin panel!</p>
+            </div>
+          ) : (
+            <div className="space-y-0">
+                {displayEducation.map((edu, index) => (
+                <TimelineItem
+                    key={edu.id}
+                    title={edu.degree}
+                    subtitle={edu.institution}
+                    dateRange={edu.dateRange}
+                    description={edu.details} // This is a string
+                    icon={<GraduationCap size={18} />}
+                    isLast={index === displayEducation.length - 1}
+                />
+                ))}
+            </div>
+          )}
         </section>
       </div>
     </>

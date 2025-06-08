@@ -1,42 +1,71 @@
-import { PageHeader } from '@/components/page-header';
-import { BlogPostItem, type BlogPost } from '@/components/blog-post-item';
 
-const blogPostsData: BlogPost[] = [
+import { PageHeader } from '@/components/page-header';
+import { BlogPostItem } from '@/components/blog-post-item';
+import type { BlogPost } from '@/types'; // Ensure BlogPost type includes id and slug
+import { getFirestore, collection, getDocs, query, orderBy, Timestamp } from 'firebase/firestore';
+import { app } from '@/lib/firebase';
+import { format } from 'date-fns'; // For formatting dates
+
+async function getBlogPosts(): Promise<BlogPost[]> {
+  if (!app) {
+    console.error("Firebase app is not initialized for Blog page.");
+    return [];
+  }
+  const db = getFirestore(app);
+  const postsCollection = collection(db, 'blogPosts');
+  const q = query(postsCollection, orderBy('createdAt', 'desc')); // Order by creation date
+  try {
+    const querySnapshot = await getDocs(q);
+    const posts = querySnapshot.docs.map(doc => {
+      const data = doc.data() as Omit<BlogPost, 'id' | 'publicationDate'> & { createdAt?: Timestamp, publicationDate?: string | Timestamp };
+      let formattedPublicationDate = 'Date not set';
+      if (data.publicationDate) {
+        if (typeof data.publicationDate === 'string') {
+           // Assuming it's 'yyyy-MM-dd' from form
+          try {
+            formattedPublicationDate = format(new Date(data.publicationDate), 'MMMM dd, yyyy');
+          } catch (e) {
+             console.warn(`Invalid date string for post ${doc.id}: ${data.publicationDate}`);
+             formattedPublicationDate = data.publicationDate; // show as is if invalid
+          }
+        } else if (data.publicationDate instanceof Timestamp) {
+          formattedPublicationDate = format(data.publicationDate.toDate(), 'MMMM dd, yyyy');
+        }
+      } else if (data.createdAt) {
+         formattedPublicationDate = format(data.createdAt.toDate(), 'MMMM dd, yyyy');
+      }
+
+      return {
+        id: doc.id,
+        ...data,
+        slug: data.slug || doc.id, // Fallback slug if not present
+        publicationDate: formattedPublicationDate,
+        tags: Array.isArray(data.tags) ? data.tags : [],
+      } as BlogPost;
+    });
+    return posts;
+  } catch (error) {
+    console.error("Error fetching blog posts from Firestore:", error);
+    return [];
+  }
+}
+
+const defaultBlogPosts: BlogPost[] = [
   {
-    id: '1',
-    slug: 'mastering-react-hooks',
-    title: 'Mastering React Hooks: A Deep Dive',
-    excerpt: 'Explore the power of React Hooks and learn how to write cleaner, more reusable component logic. This post covers useState, useEffect, useContext, and custom hooks.',
-    publicationDate: 'November 15, 2023',
-    tags: ['React', 'JavaScript', 'Web Development'],
-  },
-  {
-    id: '2',
-    slug: 'tailwind-css-best-practices',
-    title: 'Tailwind CSS Best Practices for Scalable Projects',
-    excerpt: 'Discover tips and tricks for effectively using Tailwind CSS in large applications, including configuration, component-based styling, and maintainability.',
-    publicationDate: 'October 28, 2023',
-    tags: ['Tailwind CSS', 'CSS', 'Frontend'],
-  },
-  {
-    id: '3',
-    slug: 'introduction-to-serverless-architecture',
-    title: 'An Introduction to Serverless Architecture',
-    excerpt: 'Learn the fundamentals of serverless computing, its benefits, use cases, and how to get started with popular platforms like AWS Lambda or Google Cloud Functions.',
-    publicationDate: 'September 05, 2023',
-    tags: ['Serverless', 'Cloud Computing', 'Architecture'],
-  },
-   {
-    id: '4',
-    slug: 'the-art-of-api-design',
-    title: 'The Art of API Design: Principles and Patterns',
-    excerpt: 'Delve into the key principles of designing robust, intuitive, and maintainable APIs. We cover RESTful conventions, versioning, and error handling.',
-    publicationDate: 'August 20, 2023',
-    tags: ['API Design', 'Backend', 'Software Engineering'],
+    id: 'fallback-1',
+    slug: 'fallback-post',
+    title: 'Sample Blog Post (Fallback)',
+    excerpt: 'Failed to load blog posts from the database. This is a sample post.',
+    publicationDate: 'January 01, 2024',
+    tags: ['Sample'],
   },
 ];
 
-export function BlogSection() {
+
+export async function BlogSection() {
+  const blogPostsData = await getBlogPosts();
+  const displayPosts = blogPostsData.length > 0 ? blogPostsData : defaultBlogPosts;
+
   return (
     <>
       <PageHeader
@@ -44,11 +73,17 @@ export function BlogSection() {
         description="Insights, tutorials, and reflections on technology, design, and development."
       />
       <div className="container py-12 md:py-16">
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {blogPostsData.map((post) => (
-            <BlogPostItem key={post.id} post={post} />
-          ))}
-        </div>
+         {displayPosts.length === 0 && !blogPostsData.length ? (
+             <div className="text-center py-10">
+                <p className="text-xl text-muted-foreground">No blog posts found yet. Stay tuned or add some from the admin panel!</p>
+            </div>
+        ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {displayPosts.map((post) => (
+                <BlogPostItem key={post.id} post={post} />
+            ))}
+            </div>
+        )}
       </div>
     </>
   );
