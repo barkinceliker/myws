@@ -20,6 +20,7 @@ export interface Project extends ProjectFormData {
 export interface BlogPostFormData {
   slug: string;
   title: string;
+  excerpt?: string; // Added optional excerpt
   content: string;
   publicationDate: string;
   author: string;
@@ -30,8 +31,8 @@ export interface BlogPostFormData {
 
 export interface BlogPost extends BlogPostFormData {
   id: string;
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
+  createdAt?: string; // Changed from Timestamp to string
+  updatedAt?: string; // Changed from Timestamp to string
 }
 
 export interface SkillExperienceFormData {

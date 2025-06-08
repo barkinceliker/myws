@@ -18,7 +18,7 @@ type PostPageProps = {
 
 async function getPostBySlug(slug: string): Promise<BlogPost | null> {
   if (!app) {
-    console.error("Firebase app is not initialized for individual blog post page.");
+    console.warn("Firebase app is not initialized for individual blog post page. Returning null.");
     return null;
   }
   const db = getFirestore(app);
@@ -32,7 +32,19 @@ async function getPostBySlug(slug: string): Promise<BlogPost | null> {
       return null;
     }
     const doc = querySnapshot.docs[0];
-    const data = doc.data() as Omit<BlogPost, 'id' | 'publicationDate'> & { createdAt?: Timestamp, publicationDate?: string | Timestamp };
+    const data = doc.data() as {
+        slug?: string;
+        title?: string;
+        excerpt?: string;
+        content?: string;
+        publicationDate?: string | Timestamp;
+        author?: string;
+        tags?: string[];
+        imageUrl?: string;
+        imageHint?: string;
+        createdAt?: Timestamp;
+        updatedAt?: Timestamp;
+    };
     
     let formattedPublicationDate = 'Date not set';
     if (data.publicationDate) {
@@ -40,7 +52,8 @@ async function getPostBySlug(slug: string): Promise<BlogPost | null> {
         try {
           formattedPublicationDate = format(new Date(data.publicationDate), 'MMMM dd, yyyy');
         } catch(e) {
-           formattedPublicationDate = data.publicationDate; // show as is if invalid
+           console.warn(`Invalid date string for post ${doc.id}: ${data.publicationDate}. Error: ${e}`);
+           formattedPublicationDate = data.publicationDate; 
         }
       } else if (data.publicationDate instanceof Timestamp) {
         formattedPublicationDate = format(data.publicationDate.toDate(), 'MMMM dd, yyyy');
@@ -49,30 +62,45 @@ async function getPostBySlug(slug: string): Promise<BlogPost | null> {
       formattedPublicationDate = format(data.createdAt.toDate(), 'MMMM dd, yyyy');
     }
 
+    const excerpt = data.excerpt || (data.content ? data.content.substring(0, 150) + (data.content.length > 150 ? '...' : '') : '');
+
+
     return {
       id: doc.id,
-      ...data,
+      slug: data.slug || slug,
+      title: data.title || 'Untitled Post',
+      excerpt: excerpt,
+      content: data.content || '',
       publicationDate: formattedPublicationDate,
+      author: data.author || 'Unknown Author',
       tags: Array.isArray(data.tags) ? data.tags : [],
-    } as BlogPost;
+      imageUrl: data.imageUrl || 'https://placehold.co/1200x600.png',
+      imageHint: data.imageHint || 'blog header',
+      createdAt: data.createdAt?.toDate().toISOString(),
+      updatedAt: data.updatedAt?.toDate().toISOString(),
+    };
   } catch (error) {
     console.error(`Error fetching post with slug ${slug}:`, error);
     return null;
   }
 }
 
+// Consider re-enabling generateStaticParams if build times are acceptable
+// and most blog posts are static. For now, it's fully dynamic.
 // export async function generateStaticParams() {
 //   if (!app) return [];
 //   const db = getFirestore(app);
 //   const postsCollection = collection(db, 'blogPosts');
-//   const snapshot = await getDocs(postsCollection);
-//   return snapshot.docs.map(doc => ({
-//     slug: doc.data().slug || doc.id,
-//   }));
+//   try {
+//     const snapshot = await getDocs(postsCollection);
+//     return snapshot.docs.map(doc => ({
+//       slug: doc.data().slug || doc.id,
+//     }));
+//   } catch (error) {
+//     console.error("Error generating static params for blog posts:", error);
+//     return [];
+//   }
 // }
-// Disabling generateStaticParams for now to simplify and ensure dynamic fetching works first.
-// Re-enable with proper slug handling if static generation is a priority.
-
 
 export default async function BlogPostPage({ params }: PostPageProps) {
   const { slug } = params;

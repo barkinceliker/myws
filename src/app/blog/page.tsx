@@ -1,32 +1,44 @@
 
 import { PageHeader } from '@/components/page-header';
 import { BlogPostItem } from '@/components/blog-post-item';
-import type { BlogPost } from '@/types'; // Ensure BlogPost type includes id and slug
+import type { BlogPost } from '@/types';
 import { getFirestore, collection, getDocs, query, orderBy, Timestamp } from 'firebase/firestore';
 import { app } from '@/lib/firebase';
-import { format } from 'date-fns'; // For formatting dates
+import { format } from 'date-fns';
 
 async function getBlogPosts(): Promise<BlogPost[]> {
   if (!app) {
-    console.error("Firebase app is not initialized for Blog page.");
+    console.warn("Firebase app is not initialized for Blog page. Returning empty array.");
     return [];
   }
   const db = getFirestore(app);
   const postsCollection = collection(db, 'blogPosts');
-  const q = query(postsCollection, orderBy('createdAt', 'desc')); // Order by creation date
+  const q = query(postsCollection, orderBy('createdAt', 'desc'));
   try {
     const querySnapshot = await getDocs(q);
     const posts = querySnapshot.docs.map(doc => {
-      const data = doc.data() as Omit<BlogPost, 'id' | 'publicationDate'> & { createdAt?: Timestamp, publicationDate?: string | Timestamp };
+      const data = doc.data() as {
+        slug?: string;
+        title?: string;
+        excerpt?: string;
+        content?: string;
+        publicationDate?: string | Timestamp;
+        author?: string;
+        tags?: string[];
+        imageUrl?: string;
+        imageHint?: string;
+        createdAt?: Timestamp;
+        updatedAt?: Timestamp;
+      };
+      
       let formattedPublicationDate = 'Date not set';
       if (data.publicationDate) {
         if (typeof data.publicationDate === 'string') {
-           // Assuming it's 'yyyy-MM-dd' from form
           try {
             formattedPublicationDate = format(new Date(data.publicationDate), 'MMMM dd, yyyy');
           } catch (e) {
-             console.warn(`Invalid date string for post ${doc.id}: ${data.publicationDate}`);
-             formattedPublicationDate = data.publicationDate; // show as is if invalid
+             console.warn(`Invalid date string for post ${doc.id}: ${data.publicationDate}. Error: ${e}`);
+             formattedPublicationDate = data.publicationDate; 
           }
         } else if (data.publicationDate instanceof Timestamp) {
           formattedPublicationDate = format(data.publicationDate.toDate(), 'MMMM dd, yyyy');
@@ -35,13 +47,22 @@ async function getBlogPosts(): Promise<BlogPost[]> {
          formattedPublicationDate = format(data.createdAt.toDate(), 'MMMM dd, yyyy');
       }
 
+      const excerpt = data.excerpt || (data.content ? data.content.substring(0, 150) + (data.content.length > 150 ? '...' : '') : 'No excerpt available.');
+
       return {
         id: doc.id,
-        ...data,
-        slug: data.slug || doc.id, // Fallback slug if not present
+        slug: data.slug || doc.id,
+        title: data.title || 'Untitled Post',
+        excerpt: excerpt,
+        content: data.content || '',
         publicationDate: formattedPublicationDate,
+        author: data.author || 'Unknown Author',
         tags: Array.isArray(data.tags) ? data.tags : [],
-      } as BlogPost;
+        imageUrl: data.imageUrl || 'https://placehold.co/1200x600.png',
+        imageHint: data.imageHint || 'blog header',
+        createdAt: data.createdAt?.toDate().toISOString(),
+        updatedAt: data.updatedAt?.toDate().toISOString(),
+      };
     });
     return posts;
   } catch (error) {
@@ -58,6 +79,10 @@ const defaultBlogPosts: BlogPost[] = [
     excerpt: 'Failed to load blog posts from the database. This is a sample post.',
     publicationDate: 'January 01, 2024',
     tags: ['Sample'],
+    author: 'Default Author',
+    content: 'This is the default content for the fallback blog post.',
+    imageUrl: 'https://placehold.co/1200x600.png',
+    // createdAt and updatedAt are optional strings, can be omitted
   },
 ];
 
@@ -88,3 +113,5 @@ export async function BlogSection() {
     </>
   );
 }
+// Exporting default for the page route
+export default BlogSection;

@@ -1,16 +1,11 @@
+
+"use client"; // Mark as a Client Component
+
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, CalendarDays } from 'lucide-react';
-
-export interface BlogPost {
-  id: string;
-  slug: string; // For linking to the full post, e.g., /blog/my-post-slug
-  title: string;
-  excerpt: string;
-  publicationDate: string; // e.g., "October 26, 2023"
-  tags?: string[];
-}
+import type { BlogPost } from '@/types'; // Import the updated BlogPost type
 
 interface BlogPostItemProps {
   post: BlogPost;
@@ -29,7 +24,7 @@ export function BlogPostItem({ post }: BlogPostItemProps) {
         </div>
       </CardHeader>
       <CardContent className="flex-grow">
-        <CardDescription className="text-base leading-relaxed">{post.excerpt}</CardDescription>
+        <CardDescription className="text-base leading-relaxed">{post.excerpt || 'Read more to see the content...'}</CardDescription>
         {post.tags && post.tags.length > 0 && (
           <div className="mt-4 flex flex-wrap gap-2">
             {post.tags.map(tag => (
