@@ -16,14 +16,14 @@ export default function AdminDashboardPage() {
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-2">
           <Card className="shadow-lg hover:shadow-xl transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-xl font-headline">Projeleri Yönet</CardTitle>
+              <CardTitle className="text-xl font-headline">Projeler</CardTitle>
               <Briefcase className="h-6 w-6 text-accent" />
             </CardHeader>
             <CardContent>
-              <CardDescription>Yeni projeler ekleyin, mevcutları düzenleyin veya kaldırın.</CardDescription>
+              <CardDescription>Yeni projeler ekleyin veya mevcutları yönetin.</CardDescription>
               <Button variant="outline" className="mt-4 w-full" asChild>
-                <Link href="/admin/projects">
-                  Proje Yönetimine Git
+                <Link href="/admin/projects/add">
+                  <PlusCircle className="mr-2 h-5 w-5" /> Yeni Proje Ekle
                 </Link>
               </Button>
             </CardContent>
@@ -31,14 +31,14 @@ export default function AdminDashboardPage() {
 
           <Card className="shadow-lg hover:shadow-xl transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-xl font-headline">Blog Yazılarını Yönet</CardTitle>
+              <CardTitle className="text-xl font-headline">Blog Yazıları</CardTitle>
               <FileText className="h-6 w-6 text-accent" />
             </CardHeader>
             <CardContent>
               <CardDescription>Yeni blog yazıları oluşturun veya mevcutları güncelleyin.</CardDescription>
               <Button variant="outline" className="mt-4 w-full" asChild>
-                <Link href="/admin/blog">
-                  Blog Yönetimine Git
+                <Link href="/admin/blog/add">
+                  <PlusCircle className="mr-2 h-5 w-5" /> Yeni Blog Yazısı Ekle
                 </Link>
               </Button>
             </CardContent>
