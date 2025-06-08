@@ -126,12 +126,7 @@ export default function ManageProjectsPage() {
           </AccordionItem>
         </Accordion>
 
-        <div className="p-8 border rounded-lg shadow-sm bg-card">
-          <p className="text-center text-muted-foreground">
-            Proje listesi burada görünecektir. Mevcut projeleri düzenleyebilir veya silebilirsiniz.
-            Bu özellik yakında eklenecektir.
-          </p>
-        </div>
+        {/* Proje listeleme alanı buraya gelecek */}
       </div>
     </>
   );

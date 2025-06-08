@@ -144,12 +144,7 @@ export default function ManageBlogPage() {
           </AccordionItem>
         </Accordion>
 
-        <div className="p-8 border rounded-lg shadow-sm bg-card">
-          <p className="text-center text-muted-foreground">
-            Blog yazısı listesi burada görünecektir. Mevcut yazıları düzenleyebilir veya silebilirsiniz.
-            Bu özellik yakında eklenecektir.
-          </p>
-        </div>
+        {/* Blog yazısı listeleme alanı buraya gelecek */}
       </div>
     </>
   );
