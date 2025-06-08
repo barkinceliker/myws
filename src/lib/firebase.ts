@@ -13,42 +13,37 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// Firebase'i başlat
 let app: FirebaseApp;
-let analytics: Analytics | undefined;
 
-if (typeof window !== 'undefined') { // Tarayıcı ortamında olduğumuzdan emin olalım
-  if (!getApps().length) {
-    app = initializeApp(firebaseConfig);
-    if (firebaseConfig.measurementId) {
-        analytics = getAnalytics(app);
-    }
-  } else {
-    app = getApp();
-    if (firebaseConfig.measurementId) {
-        // Zaten başlatılmış bir app varsa, analytics'i de buradan alabiliriz ya da getAnalytics(app) çağırabiliriz.
-        // Genellikle getAnalytics(app) yeniden çağırmak güvenlidir.
-        analytics = getAnalytics(app);
-    }
+// Firebase'in yalnızca bir kez başlatıldığından emin olun
+if (!getApps().length) {
+  if (!firebaseConfig.apiKey) {
+    // Bu konsol hatası, geliştirme sırasında sorunu teşhis etmeye yardımcı olur.
+    console.error(
+      "Firebase Yapılandırma Hatası: NEXT_PUBLIC_FIREBASE_API_KEY ayarlanmamış. Lütfen .env.local dosyanızı ve bu değişkenin doğru şekilde yüklendiğini kontrol edin."
+    );
+    // Firebase SDK, apiKey initializeApp sırasında eksik/geçersiz ise kendi hatasını verecektir.
   }
+  app = initializeApp(firebaseConfig);
 } else {
-    // Sunucu tarafında veya build sırasında burası çalışabilir, app'i yine de başlatmaya çalışalım
-    // ama analytics sadece client tarafında anlamlı.
-    if (!getApps().length) {
-        app = initializeApp(firebaseConfig);
-    } else {
-        app = getApp();
-    }
+  app = getApp();
 }
 
+let analytics: Analytics | undefined;
+// Analytics'i yalnızca istemci tarafında ve measurementId mevcutsa başlatın
+if (typeof window !== 'undefined' && firebaseConfig.measurementId) {
+  try {
+    // getAnalytics'i çağırmadan önce 'app' örneğinin geçerli olduğundan emin olun
+    if (app) {
+        analytics = getAnalytics(app);
+    } else {
+        console.error("Firebase Hatası: Firebase app örneği Analytics başlatma için mevcut değil.");
+    }
+  } catch (error) {
+     console.error("Firebase Hatası: Firebase Analytics başlatılamadı:", error);
+     // Analytics genellikle isteğe bağlıdır, bu yüzden uygulamanın geri kalanının çalışmasını engellememelidir.
+  }
+}
 
-// Firebase app örneğini ve analytics'i dışa aktar
+// Başlatılmış app ve analytics'i dışa aktar
 export { app, analytics };
-
-// Örnek Auth kullanımı (istek üzerine eklenebilir):
-// import { getAuth } from 'firebase/auth';
-// export const auth = getAuth(app);
-
-// Örnek Firestore kullanımı (istek üzerine eklenebilir):
-// import { getFirestore } from 'firebase/firestore';
-// export const db = getFirestore(app);
