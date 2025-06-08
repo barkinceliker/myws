@@ -2,7 +2,7 @@
 import { PageHeader } from '@/components/page-header';
 import { SkillItem, type Skill } from '@/components/skill-item';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Code, Database, Palette, Server, Smartphone, Cloud, Brain, BarChartBig } from 'lucide-react'; // Added Brain and BarChartBig for potential use
+import { Code, Database, Palette, Server, Smartphone, Cloud, Brain, BarChartBig } from 'lucide-react';
 
 const skillsData: Skill[] = [
   // Frontend
@@ -28,7 +28,7 @@ const skillsData: Skill[] = [
   { name: 'Git & GitHub', proficiency: 95, Icon: Code, category: 'Tools' },
   { name: 'Docker', proficiency: 70, Icon: Server, category: 'Tools' },
   { name: 'CI/CD (GitHub Actions)', proficiency: 65, Icon: Cloud, category: 'Tools' },
-  { name: 'Agile Methodologies', proficiency: 85, Icon: Brain, category: 'Tools' }, // Using Brain icon
+  { name: 'Agile Methodologies', proficiency: 85, Icon: Brain, category: 'Tools' },
   
   // Design
   { name: 'Figma', proficiency: 75, Icon: Palette, category: 'Design' },
@@ -36,12 +36,11 @@ const skillsData: Skill[] = [
   { name: 'UX/UI Principles', proficiency: 80, Icon: Palette, category: 'Design' },
 ];
 
-// Define icons for categories, ensuring they exist in lucide-react
 const categoryIcons: Record<string, LucideIcon> = {
   'Frontend': Smartphone,
   'Backend': Server,
   'Databases': Database,
-  'Tools': BarChartBig, // Using BarChartBig for Tools
+  'Tools': BarChartBig,
   'Design': Palette,
 };
 
@@ -58,19 +57,19 @@ export default function SkillsPage() {
         description="A showcase of my technical skills and proficiency levels across various domains."
       />
       <div className="container py-12 md:py-16">
-        <div className="space-y-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {skillCategories.map(category => {
-            const CategoryIcon = categoryIcons[category] || Code; // Default to Code icon if not found
+            const CategoryIcon = categoryIcons[category] || Code; 
             return (
-              <Card key={category} className="shadow-xl hover:shadow-2xl transition-shadow duration-300">
+              <Card key={category} className="shadow-xl hover:shadow-2xl transition-shadow duration-300 flex flex-col h-full">
                 <CardHeader>
                   <CardTitle className="font-headline text-2xl md:text-3xl text-primary flex items-center">
                     <CategoryIcon className="h-7 w-7 mr-3 text-accent" />
                     {category}
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <CardContent className="flex-grow">
+                  <div className="grid sm:grid-cols-2 gap-6">
                     {skillsData
                       .filter(skill => skill.category === category)
                       .map((skill) => (
@@ -86,5 +85,4 @@ export default function SkillsPage() {
     </>
   );
 }
-
     
