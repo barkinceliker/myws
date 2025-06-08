@@ -1,17 +1,31 @@
 
+"use client";
+
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Briefcase, FileText, Award, Settings } from 'lucide-react'; // Award or Settings for Skills/Experience
+import { Button } from '@/components/ui/button';
+import { Briefcase, FileText, Award, ArrowLeft, ArrowRight } from 'lucide-react';
 
 export default function AdminDashboardPage() {
+  const router = useRouter();
+
   return (
     <>
       <PageHeader
         title="Admin Paneli"
         description="İçeriklerinizi buradan yönetebilirsiniz."
       />
-      <div className="container py-12 md:py-16">
+      <div className="container py-8 md:py-12">
+        <div className="flex justify-start gap-2 mb-8">
+          <Button variant="outline" onClick={() => router.back()} aria-label="Geri">
+            <ArrowLeft className="mr-2 h-4 w-4" /> Geri
+          </Button>
+          <Button variant="outline" onClick={() => router.forward()} aria-label="İleri">
+            İleri <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           <Link href="/admin/projects" className="group">
             <Card className="h-full transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1">

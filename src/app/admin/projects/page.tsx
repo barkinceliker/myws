@@ -16,7 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Loader2, PlusCircle, Trash2, Edit, ExternalLink, Github } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Edit, ExternalLink, Github, ArrowLeft, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 
@@ -55,9 +55,8 @@ export default function AdminProjectsPage() {
       const projectsData = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
-        // Ensure tags is an array, handle potential Firestore data inconsistencies
         tags: Array.isArray(doc.data().tags) ? doc.data().tags : [],
-        createdAt: doc.data().createdAt as Timestamp, // Cast to Timestamp
+        createdAt: doc.data().createdAt as Timestamp,
       })) as Project[];
       setProjects(projectsData);
     } catch (error) {
@@ -75,7 +74,6 @@ export default function AdminProjectsPage() {
 
   const handleTagsChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
-    // Split by comma and trim whitespace, filter out empty strings
     const tagsArray = value.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
     setFormData(prev => ({ ...prev, tags: tagsArray }));
   };
@@ -91,7 +89,6 @@ export default function AdminProjectsPage() {
 
     try {
       if (editingProjectId) {
-        // Update existing project
         const projectRef = doc(db, 'projects', editingProjectId);
         await updateDoc(projectRef, {
           ...formData,
@@ -99,7 +96,6 @@ export default function AdminProjectsPage() {
         });
         toast({ title: 'Başarılı!', description: 'Proje başarıyla güncellendi.' });
       } else {
-        // Add new project
         await addDoc(collection(db, 'projects'), {
           ...formData,
           createdAt: serverTimestamp(),
@@ -108,8 +104,8 @@ export default function AdminProjectsPage() {
       }
       setFormData(initialFormData);
       setEditingProjectId(null);
-      fetchProjects(); // Refresh the list
-      setAccordionValue(undefined); // Close accordion
+      fetchProjects(); 
+      setAccordionValue(undefined); 
     } catch (error) {
       console.error("Error saving project: ", error);
       toast({ title: 'Hata', description: 'Proje kaydedilirken bir sorun oluştu.', variant: 'destructive' });
@@ -124,20 +120,20 @@ export default function AdminProjectsPage() {
         description: project.description,
         imageUrl: project.imageUrl,
         imageHint: project.imageHint,
-        tags: project.tags || [], // Ensure tags is an array
+        tags: project.tags || [], 
         liveDemoUrl: project.liveDemoUrl,
         repoUrl: project.repoUrl,
     });
     setEditingProjectId(project.id);
-    setAccordionValue("add-project"); // Open accordion
+    setAccordionValue("add-project"); 
   };
 
   const handleDelete = async (projectId: string) => {
-    setIsSubmitting(true); // Can use a specific deleting state if preferred
+    setIsSubmitting(true); 
     try {
       await deleteDoc(doc(db, 'projects', projectId));
       toast({ title: 'Başarılı!', description: 'Proje başarıyla silindi.' });
-      fetchProjects(); // Refresh the list
+      fetchProjects(); 
     } catch (error) {
       console.error("Error deleting project: ", error);
       toast({ title: 'Hata', description: 'Proje silinirken bir sorun oluştu.', variant: 'destructive' });
@@ -149,7 +145,7 @@ export default function AdminProjectsPage() {
   const handleCancelEdit = () => {
     setFormData(initialFormData);
     setEditingProjectId(null);
-    setAccordionValue(undefined); // Close accordion
+    setAccordionValue(undefined); 
   }
 
   return (
@@ -159,6 +155,14 @@ export default function AdminProjectsPage() {
         description="Projelerinizi buradan ekleyebilir, düzenleyebilir ve silebilirsiniz."
       />
       <div className="container py-8">
+        <div className="flex justify-start gap-2 mb-8">
+          <Button variant="outline" onClick={() => router.back()} aria-label="Geri">
+            <ArrowLeft className="mr-2 h-4 w-4" /> Geri
+          </Button>
+          <Button variant="outline" onClick={() => router.forward()} aria-label="İleri">
+            İleri <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
         <Accordion type="single" collapsible className="w-full mb-8" value={accordionValue} onValueChange={setAccordionValue}>
           <AccordionItem value="add-project">
             <AccordionTrigger className="text-xl font-semibold">

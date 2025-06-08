@@ -17,12 +17,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Loader2, PlusCircle, Trash2, Edit, Award, Briefcase } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Edit, Award, Briefcase, ArrowLeft, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 const initialFormData: SkillExperienceFormData = {
   name: '',
-  type: 'skill', // Default to skill
+  type: 'skill', 
   category: '',
   level: 'Intermediate',
   company: '',
@@ -76,17 +76,16 @@ export default function AdminSkillsExperiencePage() {
 
   const handleSelectChange = (name: keyof SkillExperienceFormData, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
-     if (name === 'type') { // Reset fields based on type
+     if (name === 'type') { 
         if (value === 'skill') {
             setFormData(prev => ({ ...prev, company: '', role: '', dateRange: '', level: 'Intermediate' }));
-        } else { // experience
+        } else { 
             setFormData(prev => ({ ...prev, category: '', level: undefined }));
         }
     }
   };
   
   const handleDetailsChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
-    // Split by newline for details
     const detailsArray = e.target.value.split('\n').map(detail => detail.trim()).filter(detail => detail !== '');
     setFormData(prev => ({ ...prev, details: detailsArray }));
   };
@@ -105,7 +104,7 @@ export default function AdminSkillsExperiencePage() {
       delete dataToSave.company;
       delete dataToSave.role;
       delete dataToSave.dateRange;
-    } else { // experience
+    } else { 
       delete dataToSave.category;
       delete dataToSave.level;
     }
@@ -181,6 +180,14 @@ export default function AdminSkillsExperiencePage() {
         description="Becerilerinizi ve profesyonel deneyimlerinizi buradan yönetin."
       />
       <div className="container py-8">
+        <div className="flex justify-start gap-2 mb-8">
+          <Button variant="outline" onClick={() => router.back()} aria-label="Geri">
+            <ArrowLeft className="mr-2 h-4 w-4" /> Geri
+          </Button>
+          <Button variant="outline" onClick={() => router.forward()} aria-label="İleri">
+            İleri <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
         <Accordion type="single" collapsible className="w-full mb-8" value={accordionValue} onValueChange={setAccordionValue}>
           <AccordionItem value="add-item">
             <AccordionTrigger className="text-xl font-semibold">

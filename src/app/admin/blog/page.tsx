@@ -16,7 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Loader2, PlusCircle, Trash2, Edit } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Edit, ArrowLeft, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import { format } from 'date-fns';
@@ -25,7 +25,7 @@ const initialFormData: BlogPostFormData = {
   slug: '',
   title: '',
   content: '',
-  publicationDate: format(new Date(), 'yyyy-MM-dd'), // Default to today
+  publicationDate: format(new Date(), 'yyyy-MM-dd'), 
   author: '',
   tags: [],
   imageUrl: 'https://placehold.co/1200x600.png',
@@ -71,7 +71,7 @@ export default function AdminBlogPage() {
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    if (name === 'title' && !editingPostId) { // Auto-generate slug for new posts
+    if (name === 'title' && !editingPostId) { 
       const slug = value.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
       setFormData(prev => ({ ...prev, [name]: value, slug }));
     } else {
@@ -125,7 +125,7 @@ export default function AdminBlogPage() {
       slug: post.slug,
       title: post.title,
       content: post.content,
-      publicationDate: post.publicationDate, // Assuming it's already in 'yyyy-MM-dd'
+      publicationDate: post.publicationDate, 
       author: post.author,
       tags: post.tags || [],
       imageUrl: post.imageUrl,
@@ -162,6 +162,14 @@ export default function AdminBlogPage() {
         description="Blog yazılarınızı buradan ekleyebilir, düzenleyebilir ve silebilirsiniz."
       />
       <div className="container py-8">
+        <div className="flex justify-start gap-2 mb-8">
+          <Button variant="outline" onClick={() => router.back()} aria-label="Geri">
+            <ArrowLeft className="mr-2 h-4 w-4" /> Geri
+          </Button>
+          <Button variant="outline" onClick={() => router.forward()} aria-label="İleri">
+            İleri <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
         <Accordion type="single" collapsible className="w-full mb-8" value={accordionValue} onValueChange={setAccordionValue}>
           <AccordionItem value="add-blog-post">
             <AccordionTrigger className="text-xl font-semibold">
