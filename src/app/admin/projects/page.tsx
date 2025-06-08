@@ -2,7 +2,7 @@
 "use client";
 
 import type { ChangeEvent, FormEvent } from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, serverTimestamp, query, orderBy, Timestamp } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
@@ -17,7 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Loader2, PlusCircle, Trash2, Edit, ExternalLink, Github, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Edit, ExternalLink, Github, ArrowLeft, ArrowRight, FolderKanban } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 
@@ -44,15 +44,7 @@ export default function AdminProjectsPage() {
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const [accordionValue, setAccordionValue] = useState<string | undefined>(undefined);
 
-  useEffect(() => {
-    if (!auth.currentUser) {
-      // Potentially redirect to login or show an error
-      // This page should ideally be protected by a route guard
-    }
-    fetchProjects();
-  }, [auth.currentUser]);
-
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     setIsLoadingData(true);
     if (!auth.currentUser) {
         console.error("Attempted to fetch projects without an authenticated user.");
@@ -77,7 +69,15 @@ export default function AdminProjectsPage() {
     } finally {
       setIsLoadingData(false);
     }
-  };
+  }, [auth, db, toast]);
+
+  useEffect(() => {
+    if (auth.currentUser) {
+      fetchProjects();
+    } else {
+      setIsLoadingData(false);
+    }
+  }, [auth, auth.currentUser, fetchProjects]);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -175,59 +175,68 @@ export default function AdminProjectsPage() {
       <PageHeader
         title="Proje Yönetimi"
         description="Projelerinizi buradan ekleyebilir, düzenleyebilir ve silebilirsiniz."
+        className="bg-secondary/80 shadow-md"
       />
       <div className="container py-8">
         <div className="flex justify-start gap-2 mb-8">
-          <Button variant="outline" onClick={() => router.back()} aria-label="Geri">
+          <Button variant="outline" onClick={() => router.back()} aria-label="Geri" className="shadow-sm hover:shadow-md transition-shadow">
             <ArrowLeft className="mr-2 h-4 w-4" /> Geri
           </Button>
-          <Button variant="outline" onClick={() => router.forward()} aria-label="İleri">
+          <Button variant="outline" onClick={() => router.forward()} aria-label="İleri" className="shadow-sm hover:shadow-md transition-shadow">
             İleri <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
-        <Accordion type="single" collapsible className="w-full mb-8" value={accordionValue} onValueChange={setAccordionValue}>
-          <AccordionItem value="add-project">
-            <AccordionTrigger className="text-xl font-semibold">
-              <PlusCircle className="mr-2 h-6 w-6" />
-              {editingProjectId ? 'Projeyi Düzenle' : 'Yeni Proje Ekle'}
+        <Accordion type="single" collapsible className="w-full mb-10 bg-card p-4 sm:p-6 rounded-lg shadow-lg border" value={accordionValue} onValueChange={setAccordionValue}>
+          <AccordionItem value="add-project" className="border-b-0">
+            <AccordionTrigger className="text-xl font-headline text-primary hover:no-underline">
+              <div className="flex items-center">
+                <PlusCircle className="mr-3 h-6 w-6 text-accent" />
+                {editingProjectId ? 'Projeyi Düzenle' : 'Yeni Proje Ekle'}
+              </div>
             </AccordionTrigger>
-            <AccordionContent>
-              <form onSubmit={handleSubmit} className="space-y-6 p-4 border rounded-md shadow-sm">
-                <div>
-                  <Label htmlFor="title">Proje Başlığı</Label>
-                  <Input id="title" name="title" value={formData.title} onChange={handleChange} required />
+            <AccordionContent className="pt-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="title" className="text-sm font-medium text-foreground/90">Proje Başlığı</Label>
+                    <Input id="title" name="title" value={formData.title} onChange={handleChange} required className="shadow-sm"/>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="tags" className="text-sm font-medium text-foreground/90">Etiketler (virgülle ayırın)</Label>
+                    <Input id="tags" name="tags" value={Array.isArray(formData.tags) ? formData.tags.join(', ') : ''} onChange={handleTagsChange} placeholder="Örn: React, Next.js" className="shadow-sm"/>
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="description">Açıklama</Label>
-                  <Textarea id="description" name="description" value={formData.description} onChange={handleChange} rows={4} required />
+                <div className="space-y-2">
+                  <Label htmlFor="description" className="text-sm font-medium text-foreground/90">Açıklama</Label>
+                  <Textarea id="description" name="description" value={formData.description} onChange={handleChange} rows={4} required className="shadow-sm"/>
                 </div>
-                <div>
-                  <Label htmlFor="imageUrl">Görsel URL</Label>
-                  <Input id="imageUrl" name="imageUrl" type="url" value={formData.imageUrl} onChange={handleChange} />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="imageUrl" className="text-sm font-medium text-foreground/90">Görsel URL</Label>
+                    <Input id="imageUrl" name="imageUrl" type="url" value={formData.imageUrl} onChange={handleChange} className="shadow-sm"/>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="imageHint" className="text-sm font-medium text-foreground/90">Görsel İpucu (AI için)</Label>
+                    <Input id="imageHint" name="imageHint" value={formData.imageHint} onChange={handleChange} placeholder="Örn: teknoloji projesi" className="shadow-sm"/>
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="imageHint">Görsel İpucu (AI için)</Label>
-                  <Input id="imageHint" name="imageHint" value={formData.imageHint} onChange={handleChange} placeholder="Örn: teknoloji projesi" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="liveDemoUrl" className="text-sm font-medium text-foreground/90">Canlı Demo URL</Label>
+                    <Input id="liveDemoUrl" name="liveDemoUrl" type="url" value={formData.liveDemoUrl} onChange={handleChange} className="shadow-sm"/>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="repoUrl" className="text-sm font-medium text-foreground/90">Repo URL</Label>
+                    <Input id="repoUrl" name="repoUrl" type="url" value={formData.repoUrl} onChange={handleChange} className="shadow-sm"/>
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="tags">Etiketler (virgülle ayırın)</Label>
-                  <Input id="tags" name="tags" value={Array.isArray(formData.tags) ? formData.tags.join(', ') : ''} onChange={handleTagsChange} placeholder="Örn: React, Next.js, Firebase" />
-                </div>
-                <div>
-                  <Label htmlFor="liveDemoUrl">Canlı Demo URL</Label>
-                  <Input id="liveDemoUrl" name="liveDemoUrl" type="url" value={formData.liveDemoUrl} onChange={handleChange} />
-                </div>
-                <div>
-                  <Label htmlFor="repoUrl">Repo URL</Label>
-                  <Input id="repoUrl" name="repoUrl" type="url" value={formData.repoUrl} onChange={handleChange} />
-                </div>
-                <div className="flex gap-2">
-                  <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? <Loader2 className="animate-spin mr-2" /> : (editingProjectId ? 'Güncelle' : 'Proje Ekle')}
+                <div className="flex gap-3 pt-2">
+                  <Button type="submit" disabled={isSubmitting} className="shadow-md hover:shadow-lg transition-shadow">
+                    {isSubmitting ? <Loader2 className="animate-spin mr-2" /> : (editingProjectId ? 'Proje Bilgilerini Güncelle' : 'Yeni Proje Oluştur')}
                   </Button>
                   {editingProjectId && (
-                    <Button type="button" variant="outline" onClick={handleCancelEdit} disabled={isSubmitting}>
-                      İptal
+                    <Button type="button" variant="outline" onClick={handleCancelEdit} disabled={isSubmitting} className="shadow-md hover:shadow-lg transition-shadow">
+                      İptal Et
                     </Button>
                   )}
                 </div>
@@ -236,78 +245,88 @@ export default function AdminProjectsPage() {
           </AccordionItem>
         </Accordion>
 
-        <h2 className="text-2xl font-semibold mb-6 text-primary">Mevcut Projeler</h2>
+        <div className="flex items-center justify-between mb-8">
+            <h2 className="font-headline text-3xl font-semibold text-primary flex items-center">
+                <FolderKanban size={32} className="mr-3 text-accent"/>
+                Mevcut Projeler
+            </h2>
+        </div>
+
         {isLoadingData ? (
-          <div className="flex justify-center items-center h-40">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="ml-2">Projeler yükleniyor...</p>
+          <div className="flex flex-col justify-center items-center h-60 text-muted-foreground">
+            <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+            <p className="text-lg">Projeler yükleniyor, lütfen bekleyin...</p>
           </div>
         ) : projects.length === 0 ? (
-          <p className="text-muted-foreground text-center">Henüz eklenmiş proje bulunmuyor.</p>
+          <div className="text-center py-12">
+            <FolderKanban size={64} className="mx-auto text-muted-foreground opacity-50 mb-4" />
+            <p className="text-xl text-muted-foreground">Henüz eklenmiş proje bulunmuyor.</p>
+            <p className="text-sm text-muted-foreground mt-2">Yukarıdaki bölümden yeni bir proje ekleyebilirsiniz.</p>
+          </div>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {projects.map((project) => (
-              <Card key={project.id} className="flex flex-col">
-                <CardHeader>
+              <Card key={project.id} className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300 border rounded-lg overflow-hidden">
+                <CardHeader className="p-0">
                   {project.imageUrl && (
-                    <div className="relative w-full h-48 mb-4 rounded-md overflow-hidden">
-                      <Image src={project.imageUrl} alt={project.title} fill style={{objectFit: 'cover'}} data-ai-hint={project.imageHint || "project image"}/>
-                    </div>
-                  )}
-                  <CardTitle>{project.title}</CardTitle>
-                  {project.tags && project.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {project.tags.map(tag => <Badge key={tag} variant="secondary">{tag}</Badge>)}
+                    <div className="relative w-full h-56">
+                      <Image src={project.imageUrl} alt={project.title} fill style={{objectFit: 'cover'}} data-ai-hint={project.imageHint || "project image"} className="transition-transform duration-300 hover:scale-105"/>
                     </div>
                   )}
                 </CardHeader>
-                <CardContent className="flex-grow">
-                  <CardDescription>{project.description}</CardDescription>
-                </CardContent>
-                <CardFooter className="flex flex-col items-start gap-2 border-t pt-4 mt-auto">
-                   <div className="flex gap-2 w-full">
-                    {project.liveDemoUrl && (
-                      <Button variant="outline" size="sm" asChild className="flex-1">
-                        <a href={project.liveDemoUrl} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="mr-1 h-4 w-4" /> Canlı Demo
-                        </a>
-                      </Button>
-                    )}
-                    {project.repoUrl && (
-                      <Button variant="outline" size="sm" asChild className="flex-1">
-                        <a href={project.repoUrl} target="_blank" rel="noopener noreferrer">
-                          <Github className="mr-1 h-4 w-4" /> Repo
-                        </a>
-                      </Button>
-                    )}
-                  </div>
-                  <div className="flex gap-2 w-full justify-end pt-2">
-                    <Button variant="outline" size="sm" onClick={() => handleEdit(project)} disabled={isSubmitting}>
-                      <Edit className="mr-1 h-4 w-4" /> Düzenle
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="destructive" size="sm" disabled={isSubmitting}>
-                          <Trash2 className="mr-1 h-4 w-4" /> Sil
+                <div className="p-5 flex flex-col flex-grow">
+                  <CardTitle className="font-headline text-2xl text-primary mb-2">{project.title}</CardTitle>
+                  {project.tags && project.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {project.tags.map(tag => <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>)}
+                    </div>
+                  )}
+                  <CardDescription className="text-sm text-foreground/80 mb-4 flex-grow line-clamp-4">{project.description}</CardDescription>
+                  <CardFooter className="flex flex-col items-stretch gap-3 p-0 mt-auto border-t border-border/70 pt-4">
+                    <div className="flex gap-2 w-full">
+                      {project.liveDemoUrl && (
+                        <Button variant="outline" size="sm" asChild className="flex-1 shadow-sm hover:shadow-md transition-all hover:bg-accent/10">
+                          <a href={project.liveDemoUrl} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="mr-2 h-4 w-4 text-accent" /> Canlı Demo
+                          </a>
                         </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Emin misiniz?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Bu işlem geri alınamaz. &quot;{project.title}&quot; adlı projeyi kalıcı olarak silmek istediğinizden emin misiniz?
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel disabled={isSubmitting}>İptal</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDelete(project.id)} disabled={isSubmitting}>
-                            {isSubmitting ? <Loader2 className="animate-spin mr-2" /> : 'Evet, Sil'}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </CardFooter>
+                      )}
+                      {project.repoUrl && (
+                        <Button variant="outline" size="sm" asChild className="flex-1 shadow-sm hover:shadow-md transition-all hover:bg-accent/10">
+                          <a href={project.repoUrl} target="_blank" rel="noopener noreferrer">
+                            <Github className="mr-2 h-4 w-4 text-foreground/70" /> Kodlar
+                          </a>
+                        </Button>
+                      )}
+                    </div>
+                    <div className="flex gap-2 w-full justify-end pt-2">
+                      <Button variant="outline" size="sm" onClick={() => handleEdit(project)} disabled={isSubmitting} className="shadow-sm hover:shadow-md transition-all">
+                        <Edit className="mr-1.5 h-4 w-4" /> Düzenle
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" size="sm" disabled={isSubmitting} className="shadow-sm hover:shadow-md transition-all">
+                            <Trash2 className="mr-1.5 h-4 w-4" /> Sil
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="border shadow-xl rounded-lg">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle className="font-headline text-xl">Emin misiniz?</AlertDialogTitle>
+                            <AlertDialogDescription className="text-muted-foreground">
+                              Bu işlem geri alınamaz. &quot;{project.title}&quot; adlı projeyi kalıcı olarak silmek istediğinizden emin misiniz?
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter className="mt-4">
+                            <AlertDialogCancel disabled={isSubmitting} className="shadow-sm hover:shadow-md">İptal</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDelete(project.id)} disabled={isSubmitting} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground shadow-sm hover:shadow-md">
+                              {isSubmitting ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : 'Evet, Kalıcı Olarak Sil'}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </CardFooter>
+                </div>
               </Card>
             ))}
           </div>
@@ -316,3 +335,5 @@ export default function AdminProjectsPage() {
     </>
   );
 }
+
+    
