@@ -2,7 +2,7 @@
 import Image from 'next/image';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent } from '@/components/ui/card';
-import { Award, Target, Users, Building, Palette, Brain } from 'lucide-react'; // Added more icons
+import { Award, Target, Users, Building, Palette, Brain, LucideIcon } from 'lucide-react';
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
 import { app } from '@/lib/firebase';
 import type { AboutContentFormData, CoreValueFormData } from '@/types';
@@ -56,18 +56,6 @@ const defaultAboutContent: AboutContentFormData = {
   coreValues: defaultCoreValues,
 };
 
-// Helper to get an icon for a core value (can be expanded)
-const getCoreValueIcon = (title: string) => {
-  const lowerTitle = title.toLowerCase();
-  if (lowerTitle.includes('excellence') || lowerTitle.includes('quality')) return Award;
-  if (lowerTitle.includes('innovation') || lowerTitle.includes('creative')) return Brain;
-  if (lowerTitle.includes('collaboration') || lowerTitle.includes('team')) return Users;
-  if (lowerTitle.includes('integrity') || lowerTitle.includes('honesty')) return Target; // Example
-  if (lowerTitle.includes('learning') || lowerTitle.includes('growth')) return Palette; // Example for Design/Learning
-  return Building; // Default icon
-};
-
-
 export async function AboutSection() {
   const content = await getAboutContent() || defaultAboutContent;
 
@@ -117,7 +105,21 @@ export async function AboutSection() {
             </h3>
             <div className="grid md:grid-cols-3 gap-8">
               {content.coreValues.map((value, index) => {
-                const IconComponent = getCoreValueIcon(value.title);
+                const lowerTitle = value.title.toLowerCase();
+                let IconComponent: LucideIcon = Building; // Default icon
+
+                if (lowerTitle.includes('excellence') || lowerTitle.includes('quality')) {
+                  IconComponent = Award;
+                } else if (lowerTitle.includes('innovation') || lowerTitle.includes('creative')) {
+                  IconComponent = Brain;
+                } else if (lowerTitle.includes('collaboration') || lowerTitle.includes('team')) {
+                  IconComponent = Users;
+                } else if (lowerTitle.includes('integrity') || lowerTitle.includes('honesty')) {
+                  IconComponent = Target;
+                } else if (lowerTitle.includes('learning') || lowerTitle.includes('growth')) {
+                  IconComponent = Palette;
+                }
+
                 return (
                   <Card key={index} className="text-center p-6 shadow-md hover:shadow-lg transition-shadow">
                     <CardContent>
@@ -137,3 +139,6 @@ export async function AboutSection() {
     </>
   );
 }
+
+// Ensure this file acts as a page for the /about route
+export default AboutSection;
