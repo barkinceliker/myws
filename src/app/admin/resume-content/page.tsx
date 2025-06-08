@@ -19,7 +19,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Loader2, PlusCircle, Trash2, Edit, ArrowLeft, Briefcase, GraduationCap } from 'lucide-react';
 
-// Başlangıç Form Verileri
 const initialExperienceFormData: ExperienceFormData = {
   role: '',
   company: '',
@@ -40,7 +39,6 @@ export default function AdminResumeContentPage() {
   const db = getFirestore(app);
   const auth = getAuth(app);
 
-  // Deneyim State'leri
   const [experienceFormData, setExperienceFormData] = useState<ExperienceFormData>(initialExperienceFormData);
   const [experiences, setExperiences] = useState<ExperienceItem[]>([]);
   const [isLoadingExperiences, setIsLoadingExperiences] = useState(true);
@@ -48,7 +46,6 @@ export default function AdminResumeContentPage() {
   const [editingExperienceId, setEditingExperienceId] = useState<string | null>(null);
   const [experienceAccordionValue, setExperienceAccordionValue] = useState<string | undefined>(undefined);
 
-  // Eğitim State'leri
   const [educationFormData, setEducationFormData] = useState<EducationFormData>(initialEducationFormData);
   const [educationItems, setEducationItems] = useState<EducationItem[]>([]);
   const [isLoadingEducation, setIsLoadingEducation] = useState(true);
@@ -56,7 +53,6 @@ export default function AdminResumeContentPage() {
   const [editingEducationId, setEditingEducationId] = useState<string | null>(null);
   const [educationAccordionValue, setEducationAccordionValue] = useState<string | undefined>(undefined);
   
-  // --- Deneyim Veri Çekme ---
   const fetchExperiences = useCallback(async () => {
     setIsLoadingExperiences(true);
     if (!auth.currentUser) { 
@@ -66,7 +62,7 @@ export default function AdminResumeContentPage() {
     }
     try {
       const collRef = collection(db, 'experiences');
-      const q = query(collRef, orderBy('createdAt', 'desc')); // createdAt'a göre sırala
+      const q = query(collRef, orderBy('createdAt', 'desc')); 
       const snapshot = await getDocs(q);
       setExperiences(snapshot.docs.map(d => ({ id: d.id, ...d.data(), createdAt: d.data().createdAt as Timestamp } as ExperienceItem)));
     } catch (error) {
@@ -77,7 +73,6 @@ export default function AdminResumeContentPage() {
     }
   }, [auth, db, toast]);
 
-  // --- Eğitim Veri Çekme ---
   const fetchEducationItems = useCallback(async () => {
     setIsLoadingEducation(true);
     if (!auth.currentUser) { 
@@ -87,7 +82,7 @@ export default function AdminResumeContentPage() {
     }
     try {
       const collRef = collection(db, 'educationItems');
-      const q = query(collRef, orderBy('createdAt', 'desc')); // createdAt'a göre sırala
+      const q = query(collRef, orderBy('createdAt', 'desc')); 
       const snapshot = await getDocs(q);
       setEducationItems(snapshot.docs.map(d => ({ id: d.id, ...d.data(), createdAt: d.data().createdAt as Timestamp } as EducationItem)));
     } catch (error) {
@@ -114,11 +109,9 @@ export default function AdminResumeContentPage() {
     return () => unsubscribe();
   }, [auth, fetchExperiences, fetchEducationItems]);
 
-  // --- Deneyim Handler'ları ---
   const handleExperienceChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     if (name === 'responsibilities') {
-      // Sorumlulukları her satır bir eleman olacak şekilde diziye çevir
       setExperienceFormData(prev => ({ ...prev, responsibilities: value.split('\n').map(r => r.trim()).filter(r => r) }));
     } else {
       setExperienceFormData(prev => ({ ...prev, [name]: value }));
@@ -159,7 +152,7 @@ export default function AdminResumeContentPage() {
       role: exp.role,
       company: exp.company,
       dateRange: exp.dateRange,
-      responsibilities: exp.responsibilities || [], // Null/undefined ise boş dizi
+      responsibilities: exp.responsibilities || [], 
     });
     setEditingExperienceId(exp.id);
     setExperienceAccordionValue("add-experience");
@@ -180,7 +173,6 @@ export default function AdminResumeContentPage() {
     }
   };
 
-  // --- Eğitim Handler'ları ---
   const handleEducationChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setEducationFormData(prev => ({ ...prev, [name]: value }));
@@ -246,7 +238,7 @@ export default function AdminResumeContentPage() {
       <PageHeader
         title="Özgeçmiş İçerik Yönetimi"
         description="Profesyonel deneyimlerinizi ve eğitim bilgilerinizi buradan yönetin."
-        className="bg-secondary/80 shadow-md"
+        className="bg-secondary/80 shadow-md border-b"
       />
       <div className="container py-8">
         <div className="flex justify-start gap-2 mb-8">
@@ -255,7 +247,6 @@ export default function AdminResumeContentPage() {
           </Button>
         </div>
 
-        {/* Deneyimler Bölümü */}
         <section className="mb-12">
             <div className="flex items-center justify-between mb-6 border-b border-border/70 pb-4">
                 <h2 className="font-headline text-3xl font-semibold text-primary flex items-center">
@@ -286,7 +277,7 @@ export default function AdminResumeContentPage() {
             {isLoadingExperiences ? <div className="flex justify-center py-10"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div> : experiences.length === 0 ? <p className="text-center py-6 text-muted-foreground bg-card border rounded-lg shadow-sm mt-6">Henüz deneyim eklenmemiş.</p> : (
                 <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
                     {experiences.map(exp => (
-                        <Card key={exp.id} className="shadow-lg hover:shadow-xl transition-shadow bg-card/80 backdrop-blur-sm">
+                        <Card key={exp.id} className="shadow-lg hover:shadow-xl transition-shadow bg-card/80 backdrop-blur-sm dark:bg-card/30">
                             <CardHeader><CardTitle className="text-xl text-primary">{exp.role}</CardTitle><CardDescription>{exp.company} ({exp.dateRange})</CardDescription></CardHeader>
                             <CardContent><ul className="list-disc pl-5 text-sm space-y-1 text-foreground/80">{exp.responsibilities.map((r, i) => <li key={i}>{r}</li>)}</ul></CardContent>
                             <CardFooter className="flex justify-end gap-2 border-t pt-4 pb-4 px-5">
@@ -302,7 +293,6 @@ export default function AdminResumeContentPage() {
             )}
         </section>
 
-        {/* Eğitim Bölümü */}
         <section>
              <div className="flex items-center justify-between mb-6 border-b border-border/70 pb-4">
                 <h2 className="font-headline text-3xl font-semibold text-primary flex items-center">
@@ -333,7 +323,7 @@ export default function AdminResumeContentPage() {
             {isLoadingEducation ? <div className="flex justify-center py-10"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div> : educationItems.length === 0 ? <p className="text-center py-6 text-muted-foreground bg-card border rounded-lg shadow-sm mt-6">Henüz eğitim bilgisi eklenmemiş.</p> : (
                 <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
                     {educationItems.map(edu => (
-                        <Card key={edu.id} className="shadow-lg hover:shadow-xl transition-shadow bg-card/80 backdrop-blur-sm">
+                        <Card key={edu.id} className="shadow-lg hover:shadow-xl transition-shadow bg-card/80 backdrop-blur-sm dark:bg-card/30">
                             <CardHeader><CardTitle className="text-xl text-primary">{edu.degree}</CardTitle><CardDescription>{edu.institution} ({edu.dateRange})</CardDescription></CardHeader>
                             <CardContent><p className="text-sm text-foreground/80">{edu.details}</p></CardContent>
                             <CardFooter className="flex justify-end gap-2 border-t pt-4 pb-4 px-5">

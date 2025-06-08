@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { app } from '@/lib/firebase';
-import type { HomeContentFormData } from '@/types'; // HomeContent arayüzünü kaldırdık, sadece FormData kullanıyoruz
+import type { HomeContentFormData } from '@/types'; 
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,9 +17,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Save, ArrowLeft, Settings } from 'lucide-react';
 
-const DOCUMENT_ID = "main"; // Sabit doküman ID'si
+const DOCUMENT_ID = "main"; 
 
-// Başlangıç form verileri
 const initialFormData: HomeContentFormData = {
   heroTitle: 'Welcome to My Portfolio',
   heroSubtitle: 'Discover my work, skills, and journey in the world of technology.',
@@ -55,7 +54,6 @@ export default function AdminHomeContentPage() {
     if (!auth.currentUser) {
       console.warn("AdminHomeContentPage - Attempted to fetch home content without an authenticated user.");
       setIsLoadingData(false);
-      // toast({ title: 'Yetkilendirme Hatası', description: 'İçerik yüklemek için giriş yapmış olmalısınız.', variant: 'destructive' });
       return;
     }
     try {
@@ -65,7 +63,7 @@ export default function AdminHomeContentPage() {
         setFormData(docSnap.data() as HomeContentFormData);
       } else {
         console.log("No home content document found, using initial default data. Will create if saved.");
-        setFormData(initialFormData); // Eğer doküman yoksa başlangıç verilerini kullan
+        setFormData(initialFormData); 
       }
     } catch (error) {
       console.error("Error fetching home content: ", error);
@@ -103,10 +101,10 @@ export default function AdminHomeContentPage() {
 
     try {
       const docRef = doc(db, 'homeContent', DOCUMENT_ID);
-      await setDoc(docRef, { // setDoc ile belgeyi oluşturur veya üzerine yazar
+      await setDoc(docRef, { 
         ...formData,
         updatedAt: serverTimestamp(),
-      }, { merge: true }); // merge:true varolan alanları korur, sadece formdakileri günceller/ekler
+      }, { merge: true }); 
       toast({ title: 'Başarılı!', description: 'Ana sayfa içeriği başarıyla güncellendi.' });
     } catch (error) {
       console.error("Error saving home content: ", error);
@@ -116,7 +114,6 @@ export default function AdminHomeContentPage() {
     }
   };
   
-  // Form bölümlerini ve alanlarını tanımla
   const formSections = [
     {
       title: "Hero Bölümü",
@@ -167,7 +164,7 @@ export default function AdminHomeContentPage() {
       <PageHeader
         title="Ana Sayfa İçerik Yönetimi"
         description="Ana sayfanızdaki metinleri ve temel bağlantıları buradan düzenleyebilirsiniz."
-        className="bg-secondary/80 shadow-md"
+        className="bg-secondary/80 shadow-md border-b"
       />
       <div className="container py-8">
         <div className="flex justify-start gap-2 mb-8">
@@ -177,7 +174,7 @@ export default function AdminHomeContentPage() {
         </div>
 
         <Card className="shadow-xl border rounded-lg">
-          <CardHeader className="border-b bg-slate-50/50">
+          <CardHeader className="border-b bg-slate-50/50 dark:bg-slate-800/20">
             <CardTitle className="font-headline text-2xl text-primary flex items-center">
               <Settings size={28} className="mr-3 text-accent"/>
               Ana Sayfa Ayarları
@@ -189,7 +186,7 @@ export default function AdminHomeContentPage() {
           <form onSubmit={handleSubmit}>
             <CardContent className="p-6 space-y-8">
               {formSections.map(section => (
-                <div key={section.title} className="space-y-6 p-6 border rounded-lg shadow-sm bg-card/60 backdrop-blur-sm">
+                <div key={section.title} className="space-y-6 p-6 border rounded-lg shadow-sm bg-card/60 backdrop-blur-sm dark:bg-card/30">
                   <h3 className="font-headline text-xl text-primary border-b pb-2 mb-4">{section.title}</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {section.fields.map(field => (
@@ -220,7 +217,7 @@ export default function AdminHomeContentPage() {
                 </div>
               ))}
             </CardContent>
-            <CardFooter className="border-t p-6 flex justify-end bg-slate-50/50">
+            <CardFooter className="border-t p-6 flex justify-end bg-slate-50/50 dark:bg-slate-800/20">
               <Button type="submit" disabled={isSubmitting || isLoadingData} className="shadow-md hover:shadow-lg transition-shadow min-w-[150px]">
                 {isSubmitting ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2 h-5 w-5" />}
                 Değişiklikleri Kaydet

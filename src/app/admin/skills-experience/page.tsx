@@ -23,9 +23,9 @@ import { Badge } from '@/components/ui/badge';
 
 const initialFormData: SkillExperienceFormData = {
   name: '',
-  type: 'skill', // Default type
+  type: 'skill', 
   category: '',
-  level: 'Intermediate', // Default level for skill type
+  level: 'Intermediate', 
   company: '',
   role: '',
   dateRange: '',
@@ -60,7 +60,7 @@ export default function AdminSkillsExperiencePage() {
       const itemsData = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
-        details: Array.isArray(doc.data().details) ? doc.data().details : [], // Ensure details is an array
+        details: Array.isArray(doc.data().details) ? doc.data().details : [], 
         createdAt: doc.data().createdAt as Timestamp,
       })) as SkillExperience[];
       setItems(itemsData);
@@ -90,19 +90,16 @@ export default function AdminSkillsExperiencePage() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Handles changes from Select components
   const handleSelectChange = (name: keyof SkillExperienceFormData, value: string) => {
     setFormData(prev => ({ 
       ...prev, 
       [name]: value,
-      // Reset fields specific to the other type when type changes
       ...(name === 'type' && value === 'skill' && { company: '', role: '', dateRange: '' }),
       ...(name === 'type' && value === 'experience' && { category: '', level: undefined }),
     }));
   };
   
   const handleDetailsChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
-    // Split textarea value by new lines to create an array of strings
     const detailsArray = e.target.value.split('\n').map(detail => detail.trim()).filter(detail => detail !== '');
     setFormData(prev => ({ ...prev, details: detailsArray }));
   };
@@ -121,13 +118,12 @@ export default function AdminSkillsExperiencePage() {
     }
     setIsSubmitting(true);
 
-    // Prepare data by removing fields not relevant to the selected type
     const dataToSave: Partial<SkillExperienceFormData> = { ...formData };
     if (formData.type === 'skill') {
       delete dataToSave.company;
       delete dataToSave.role;
       delete dataToSave.dateRange;
-    } else { // type === 'experience'
+    } else { 
       delete dataToSave.category;
       delete dataToSave.level;
     }
@@ -161,16 +157,16 @@ export default function AdminSkillsExperiencePage() {
   };
 
   const handleEdit = (item: SkillExperience) => {
-    setFormData({ // Populate form with item data
+    setFormData({ 
       name: item.name,
       type: item.type,
-      category: item.category || '', // Ensure category is not undefined
-      level: item.level || 'Intermediate', // Default if undefined
+      category: item.category || '', 
+      level: item.level || 'Intermediate', 
       company: item.company || '',
       role: item.role || '',
       dateRange: item.dateRange || '',
       description: item.description,
-      details: item.details || [], // Ensure details is an array
+      details: item.details || [], 
     });
     setEditingItemId(item.id);
     setAccordionValue("add-item");
@@ -206,7 +202,7 @@ export default function AdminSkillsExperiencePage() {
       <PageHeader
         title="Beceri & Deneyim Yönetimi"
         description="Becerilerinizi ve profesyonel deneyimlerinizi buradan yönetin."
-        className="bg-secondary/80 shadow-md"
+        className="bg-secondary/80 shadow-md border-b"
       />
       <div className="container py-8">
         <div className="flex justify-start gap-2 mb-8">
@@ -214,6 +210,7 @@ export default function AdminSkillsExperiencePage() {
             <ArrowLeft className="mr-2 h-4 w-4" /> Geri
           </Button>
         </div>
+        
         <Accordion type="single" collapsible className="w-full mb-10 bg-card p-4 sm:p-6 rounded-lg shadow-xl border" value={accordionValue} onValueChange={setAccordionValue}>
           <AccordionItem value="add-item" className="border-b-0">
             <AccordionTrigger className="text-xl font-headline text-primary hover:no-underline data-[state=open]:pb-4 data-[state=closed]:pb-0">

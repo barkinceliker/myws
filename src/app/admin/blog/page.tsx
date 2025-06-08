@@ -89,7 +89,6 @@ export default function AdminBlogPage() {
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     if (name === 'title' && !editingPostId) {
-      // Create slug from title only when adding a new post and title changes
       const slug = value.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
       setFormData(prev => ({ ...prev, [name]: value, slug }));
     } else {
@@ -148,7 +147,7 @@ export default function AdminBlogPage() {
       slug: post.slug,
       title: post.title,
       content: post.content,
-      publicationDate: post.publicationDate, // Firestore'dan gelen tarihi doğrudan kullan
+      publicationDate: post.publicationDate, 
       author: post.author,
       tags: post.tags || [],
       imageUrl: post.imageUrl,
@@ -188,7 +187,7 @@ export default function AdminBlogPage() {
       <PageHeader
         title="Blog Yönetimi"
         description="Blog yazılarınızı buradan ekleyebilir, düzenleyebilir ve silebilirsiniz."
-        className="bg-secondary/80 shadow-md"
+        className="bg-secondary/80 shadow-md border-b"
       />
       <div className="container py-8">
         <div className="flex justify-start gap-2 mb-8">
@@ -196,6 +195,7 @@ export default function AdminBlogPage() {
             <ArrowLeft className="mr-2 h-4 w-4" /> Geri
           </Button>
         </div>
+        
         <Accordion type="single" collapsible className="w-full mb-10 bg-card p-4 sm:p-6 rounded-lg shadow-xl border" value={accordionValue} onValueChange={setAccordionValue}>
           <AccordionItem value="add-blog-post" className="border-b-0">
             <AccordionTrigger className="text-xl font-headline text-primary hover:no-underline data-[state=open]:pb-4 data-[state=closed]:pb-0">

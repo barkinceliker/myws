@@ -17,16 +17,14 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Save, ArrowLeft, UserCircle, PlusCircle, Trash2, Award, Target, Users } from 'lucide-react';
 
-const DOCUMENT_ID = "main"; // Sabit doküman ID'si
+const DOCUMENT_ID = "main"; 
 
-// Başlangıç Temel Değerler (Eğer veritabanında yoksa kullanılır)
 const initialCoreValues: CoreValueFormData[] = [
   { title: 'Excellence', description: 'Striving for the highest quality in everything I do, paying attention to detail and delivering outstanding results.' },
   { title: 'Innovation', description: 'Constantly seeking new ideas and creative solutions to solve complex problems and drive progress.' },
   { title: 'Collaboration', description: 'Believing in the power of teamwork and fostering an environment of open communication and mutual respect.' },
 ];
 
-// Başlangıç form verileri
 const initialFormData: AboutContentFormData = {
   pageTitle: 'About Me',
   pageDescription: 'A glimpse into my journey, aspirations, and what drives me.',
@@ -41,7 +39,7 @@ const initialFormData: AboutContentFormData = {
   bioCollaboration: "I thrive in collaborative environments and believe that the best work comes from diverse perspectives and shared enthusiasm. My approach is rooted in continuous learning and a commitment to excellence, always striving to deliver impactful and meaningful outcomes.",
   bioPersonal: "Beyond my professional pursuits, I'm an avid [Hobby 1], enjoy [Hobby 2], and am always on the lookout for new challenges and opportunities to grow, both personally and professionally.",
   coreValuesTitle: 'My Core Values',
-  coreValues: initialCoreValues, // Başlangıç temel değerlerini ata
+  coreValues: initialCoreValues, 
 };
 
 export default function AdminAboutContentPage() {
@@ -66,15 +64,14 @@ export default function AdminAboutContentPage() {
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         const data = docSnap.data() as AboutContentFormData;
-        // Veritabanından gelen coreValues'ın bir array olup olmadığını kontrol et, değilse veya boşsa başlangıç değerlerini kullan
         setFormData({ 
-            ...initialFormData, // Önce başlangıç değerlerini yay
-            ...data,             // Sonra veritabanından gelenleri yay (üzerine yazar)
+            ...initialFormData, 
+            ...data,             
             coreValues: Array.isArray(data.coreValues) && data.coreValues.length > 0 ? data.coreValues : initialCoreValues 
         });
       } else {
         console.log("No about content document found, using initial default data. Will create if saved.");
-        setFormData(initialFormData); // Eğer doküman yoksa başlangıç verilerini kullan
+        setFormData(initialFormData); 
       }
     } catch (error) {
       console.error("Error fetching about content: ", error);
@@ -133,7 +130,7 @@ export default function AdminAboutContentPage() {
 
     try {
       const docRef = doc(db, 'aboutContent', DOCUMENT_ID);
-      await setDoc(docRef, { // setDoc ile belgeyi oluşturur veya üzerine yazar
+      await setDoc(docRef, { 
         ...formData,
         updatedAt: serverTimestamp(),
       }, { merge: true });
@@ -155,15 +152,14 @@ export default function AdminAboutContentPage() {
     );
   }
   
-  // Temel değer kartları için ikon eşleştirmesi
-  const coreValueIcons = [Award, Target, Users, Award, Target, Users]; // Daha fazla değer için tekrarlanabilir
+  const coreValueIcons = [Award, Target, Users, Award, Target, Users]; 
 
   return (
     <>
       <PageHeader
         title="Hakkımda Sayfası İçerik Yönetimi"
         description="Kişisel bilgilerinizi, biyografinizi ve temel değerlerinizi buradan düzenleyebilirsiniz."
-        className="bg-secondary/80 shadow-md"
+        className="bg-secondary/80 shadow-md border-b"
       />
       <div className="container py-8">
         <div className="flex justify-start gap-2 mb-8">
@@ -173,7 +169,7 @@ export default function AdminAboutContentPage() {
         </div>
 
         <Card className="shadow-xl border rounded-lg">
-          <CardHeader className="border-b bg-slate-50/50">
+          <CardHeader className="border-b bg-slate-50/50 dark:bg-slate-800/20">
             <CardTitle className="font-headline text-2xl text-primary flex items-center">
               <UserCircle size={28} className="mr-3 text-accent"/>
               Hakkımda Sayfası Ayarları
@@ -184,8 +180,7 @@ export default function AdminAboutContentPage() {
           </CardHeader>
           <form onSubmit={handleSubmit}>
             <CardContent className="p-6 space-y-8">
-              {/* Genel Bilgiler & Portre Bölümü */}
-              <div className="space-y-6 p-6 border rounded-lg shadow-sm bg-card/60 backdrop-blur-sm">
+              <div className="space-y-6 p-6 border rounded-lg shadow-sm bg-card/60 backdrop-blur-sm dark:bg-card/30">
                 <h3 className="font-headline text-xl text-primary border-b pb-2 mb-4">Genel Bilgiler & Portre</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div><Label htmlFor="pageTitle">Sayfa Başlığı</Label><Input id="pageTitle" name="pageTitle" value={formData.pageTitle} onChange={handleChange} className="shadow-sm focus:ring-primary focus:border-primary" /></div>
@@ -195,8 +190,7 @@ export default function AdminAboutContentPage() {
                 </div>
               </div>
 
-              {/* Biyografi Bölümü */}
-              <div className="space-y-6 p-6 border rounded-lg shadow-sm bg-card/60 backdrop-blur-sm">
+              <div className="space-y-6 p-6 border rounded-lg shadow-sm bg-card/60 backdrop-blur-sm dark:bg-card/30">
                 <h3 className="font-headline text-xl text-primary border-b pb-2 mb-4">Biyografi Metinleri</h3>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div><Label htmlFor="greetingName">Selamlama Adı (Örn: John Doe)</Label><Input id="greetingName" name="greetingName" value={formData.greetingName} onChange={handleChange} className="shadow-sm focus:ring-primary focus:border-primary"/></div>
@@ -210,16 +204,15 @@ export default function AdminAboutContentPage() {
                 <div><Label htmlFor="bioPersonal">Kişisel İlgi Alanları Paragrafı</Label><Textarea id="bioPersonal" name="bioPersonal" value={formData.bioPersonal} onChange={handleChange} rows={3} className="shadow-sm focus:ring-primary focus:border-primary"/></div>
               </div>
 
-              {/* Temel Değerler Bölümü */}
-              <div className="space-y-6 p-6 border rounded-lg shadow-sm bg-card/60 backdrop-blur-sm">
+              <div className="space-y-6 p-6 border rounded-lg shadow-sm bg-card/60 backdrop-blur-sm dark:bg-card/30">
                 <div className="flex justify-between items-center border-b pb-2 mb-4">
                     <h3 className="font-headline text-xl text-primary">{formData.coreValuesTitle || "Temel Değerler"}</h3>
                     <Input id="coreValuesTitle" name="coreValuesTitle" value={formData.coreValuesTitle} onChange={handleChange} placeholder="Bölüm Başlığı (Örn: Temel Değerlerim)" className="w-1/2 text-sm shadow-sm focus:ring-primary focus:border-primary"/>
                 </div>
                 {formData.coreValues.map((value, index) => {
-                  const IconComponent = coreValueIcons[index % coreValueIcons.length]; // İkonları döngüsel kullan
+                  const IconComponent = coreValueIcons[index % coreValueIcons.length]; 
                   return (
-                    <div key={index} className="space-y-3 p-4 border rounded-md relative bg-background/70 shadow-inner">
+                    <div key={index} className="space-y-3 p-4 border rounded-md relative bg-background/70 dark:bg-background/50 shadow-inner">
                         <div className="flex items-center mb-2">
                             <IconComponent className="h-6 w-6 text-accent mr-3" />
                             <Label htmlFor={`coreValueTitle-${index}`} className="text-base font-semibold text-foreground/90">Değer #{index + 1}</Label>
@@ -251,7 +244,7 @@ export default function AdminAboutContentPage() {
               </div>
 
             </CardContent>
-            <CardFooter className="border-t p-6 flex justify-end bg-slate-50/50">
+            <CardFooter className="border-t p-6 flex justify-end bg-slate-50/50 dark:bg-slate-800/20">
               <Button type="submit" disabled={isSubmitting || isLoadingData} className="shadow-md hover:shadow-lg transition-shadow min-w-[150px]">
                 {isSubmitting ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2 h-5 w-5" />}
                 Değişiklikleri Kaydet

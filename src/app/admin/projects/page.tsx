@@ -49,8 +49,6 @@ export default function AdminProjectsPage() {
     if (!auth.currentUser) {
         console.warn("AdminProjectsPage: Attempted to fetch projects without an authenticated user.");
         setIsLoadingData(false);
-        // Optionally show a toast, but avoid if it's too noisy during initial auth check
-        // toast({ title: 'Yetkilendirme Hatası', description: 'Projeleri yüklemek için giriş yapmış olmalısınız.', variant: 'destructive' });
         return;
     }
     try {
@@ -61,7 +59,7 @@ export default function AdminProjectsPage() {
         id: doc.id,
         ...doc.data(),
         tags: Array.isArray(doc.data().tags) ? doc.data().tags : [],
-        createdAt: doc.data().createdAt as Timestamp, // Firestore'dan gelen Timestamp olarak al
+        createdAt: doc.data().createdAt as Timestamp, 
       })) as Project[];
       setProjects(projectsData);
     } catch (error) {
@@ -77,13 +75,12 @@ export default function AdminProjectsPage() {
       if (user) {
         fetchProjects();
       } else {
-        // No user is signed in.
-        setIsLoadingData(false); // Ensure loading state is false if no user
-        setProjects([]); // Clear projects if user logs out
+        setIsLoadingData(false); 
+        setProjects([]); 
         console.warn("AdminProjectsPage: No user authenticated. Data fetching aborted.");
       }
     });
-    return () => unsubscribe(); // Cleanup subscription on unmount
+    return () => unsubscribe(); 
   }, [auth, fetchProjects]);
 
 
@@ -94,7 +91,6 @@ export default function AdminProjectsPage() {
 
   const handleTagsChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
-    // Kullanıcı etiketleri virgülle ayırarak girer, boşlukları temizler ve boş etiketleri filtreler
     const tagsArray = value.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
     setFormData(prev => ({ ...prev, tags: tagsArray }));
   };
@@ -118,20 +114,20 @@ export default function AdminProjectsPage() {
         const projectRef = doc(db, 'projects', editingProjectId);
         await updateDoc(projectRef, {
           ...formData,
-          updatedAt: serverTimestamp(), // Güncelleme zamanını ekle
+          updatedAt: serverTimestamp(), 
         });
         toast({ title: 'Başarılı!', description: 'Proje başarıyla güncellendi.' });
       } else {
         await addDoc(collection(db, 'projects'), {
           ...formData,
-          createdAt: serverTimestamp(), // Oluşturma zamanını ekle
+          createdAt: serverTimestamp(), 
         });
         toast({ title: 'Başarılı!', description: 'Yeni proje başarıyla eklendi.' });
       }
-      setFormData(initialFormData); // Formu sıfırla
-      setEditingProjectId(null); // Düzenleme modundan çık
-      fetchProjects(); // Projeleri yeniden yükle
-      setAccordionValue(undefined); // Akordeonu kapat
+      setFormData(initialFormData); 
+      setEditingProjectId(null); 
+      fetchProjects(); 
+      setAccordionValue(undefined); 
     } catch (error) {
       console.error("Error saving project: ", error);
       toast({ title: 'Hata', description: 'Proje kaydedilirken bir sorun oluştu.', variant: 'destructive' });
@@ -141,17 +137,17 @@ export default function AdminProjectsPage() {
   };
 
   const handleEdit = (project: Project) => {
-    setFormData({ // Formu düzenlenecek projenin bilgileriyle doldur
+    setFormData({ 
         title: project.title,
         description: project.description,
         imageUrl: project.imageUrl,
         imageHint: project.imageHint || 'project image',
-        tags: project.tags || [], // tags null/undefined ise boş dizi ata
+        tags: project.tags || [], 
         liveDemoUrl: project.liveDemoUrl || '',
         repoUrl: project.repoUrl || '',
     });
-    setEditingProjectId(project.id); // Düzenleme moduna geç ve proje ID'sini sakla
-    setAccordionValue("add-project"); // Akordeonu aç
+    setEditingProjectId(project.id); 
+    setAccordionValue("add-project"); 
   };
 
   const handleDelete = async (projectId: string) => {
@@ -160,11 +156,11 @@ export default function AdminProjectsPage() {
         toast({ title: 'Yetkilendirme Hatası', description: 'İşlem yapmak için giriş yapmış olmalısınız.', variant: 'destructive' });
         return;
     }
-    setIsSubmitting(true); // Silme işlemi için de yükleme durumu kullanılabilir
+    setIsSubmitting(true); 
     try {
       await deleteDoc(doc(db, 'projects', projectId));
       toast({ title: 'Başarılı!', description: 'Proje başarıyla silindi.' });
-      fetchProjects(); // Projeleri yeniden yükle
+      fetchProjects(); 
     } catch (error) {
       console.error("Error deleting project: ", error);
       toast({ title: 'Hata', description: 'Proje silinirken bir sorun oluştu.', variant: 'destructive' });
@@ -176,7 +172,7 @@ export default function AdminProjectsPage() {
   const handleCancelEdit = () => {
     setFormData(initialFormData);
     setEditingProjectId(null);
-    setAccordionValue(undefined); // Akordeonu kapat
+    setAccordionValue(undefined); 
   }
 
   return (
@@ -184,7 +180,7 @@ export default function AdminProjectsPage() {
       <PageHeader
         title="Proje Yönetimi"
         description="Projelerinizi buradan ekleyebilir, düzenleyebilir ve silebilirsiniz."
-        className="bg-secondary/80 shadow-md"
+        className="bg-secondary/80 shadow-md border-b"
       />
       <div className="container py-8">
         <div className="flex justify-start gap-2 mb-8">
@@ -192,6 +188,7 @@ export default function AdminProjectsPage() {
             <ArrowLeft className="mr-2 h-4 w-4" /> Geri
           </Button>
         </div>
+        
         <Accordion type="single" collapsible className="w-full mb-10 bg-card p-4 sm:p-6 rounded-lg shadow-xl border" value={accordionValue} onValueChange={setAccordionValue}>
           <AccordionItem value="add-project" className="border-b-0">
             <AccordionTrigger className="text-xl font-headline text-primary hover:no-underline data-[state=open]:pb-4 data-[state=closed]:pb-0">
