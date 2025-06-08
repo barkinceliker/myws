@@ -5,6 +5,7 @@ import type { ChangeEvent, FormEvent } from 'react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, serverTimestamp, query, orderBy, Timestamp } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 import { app } from '@/lib/firebase';
 import type { Project, ProjectFormData } from '@/types';
 import { PageHeader } from '@/components/page-header';
@@ -34,6 +35,7 @@ export default function AdminProjectsPage() {
   const router = useRouter();
   const { toast } = useToast();
   const db = getFirestore(app);
+  const auth = getAuth(app);
 
   const [formData, setFormData] = useState<ProjectFormData>(initialFormData);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -43,11 +45,21 @@ export default function AdminProjectsPage() {
   const [accordionValue, setAccordionValue] = useState<string | undefined>(undefined);
 
   useEffect(() => {
+    if (!auth.currentUser) {
+      // Potentially redirect to login or show an error
+      // This page should ideally be protected by a route guard
+    }
     fetchProjects();
-  }, []);
+  }, [auth.currentUser]);
 
   const fetchProjects = async () => {
     setIsLoadingData(true);
+    if (!auth.currentUser) {
+        console.error("Attempted to fetch projects without an authenticated user.");
+        toast({ title: 'Yetkilendirme Hatası', description: 'Projeleri yüklemek için giriş yapmış olmalısınız.', variant: 'destructive' });
+        setIsLoadingData(false);
+        return;
+    }
     try {
       const projectsCollection = collection(db, 'projects');
       const q = query(projectsCollection, orderBy('createdAt', 'desc'));
@@ -81,6 +93,11 @@ export default function AdminProjectsPage() {
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
+    if (!auth.currentUser) {
+        console.error("Attempted to submit project without an authenticated user.");
+        toast({ title: 'Yetkilendirme Hatası', description: 'İşlem yapmak için giriş yapmış olmalısınız.', variant: 'destructive' });
+        return;
+    }
     if (!formData.title || !formData.description) {
       toast({ title: 'Eksik Bilgi', description: 'Lütfen başlık ve açıklama alanlarını doldurun.', variant: 'destructive' });
       return;
@@ -119,16 +136,21 @@ export default function AdminProjectsPage() {
         title: project.title,
         description: project.description,
         imageUrl: project.imageUrl,
-        imageHint: project.imageHint,
+        imageHint: project.imageHint || 'project image',
         tags: project.tags || [], 
-        liveDemoUrl: project.liveDemoUrl,
-        repoUrl: project.repoUrl,
+        liveDemoUrl: project.liveDemoUrl || '',
+        repoUrl: project.repoUrl || '',
     });
     setEditingProjectId(project.id);
     setAccordionValue("add-project"); 
   };
 
   const handleDelete = async (projectId: string) => {
+    if (!auth.currentUser) {
+        console.error("Attempted to delete project without an authenticated user.");
+        toast({ title: 'Yetkilendirme Hatası', description: 'İşlem yapmak için giriş yapmış olmalısınız.', variant: 'destructive' });
+        return;
+    }
     setIsSubmitting(true); 
     try {
       await deleteDoc(doc(db, 'projects', projectId));
@@ -242,24 +264,24 @@ export default function AdminProjectsPage() {
                 <CardContent className="flex-grow">
                   <CardDescription>{project.description}</CardDescription>
                 </CardContent>
-                <CardFooter className="flex flex-col items-start gap-2">
-                   <div className="flex gap-2 mt-2">
+                <CardFooter className="flex flex-col items-start gap-2 border-t pt-4 mt-auto">
+                   <div className="flex gap-2 w-full">
                     {project.liveDemoUrl && (
-                      <Button variant="outline" size="sm" asChild>
+                      <Button variant="outline" size="sm" asChild className="flex-1">
                         <a href={project.liveDemoUrl} target="_blank" rel="noopener noreferrer">
                           <ExternalLink className="mr-1 h-4 w-4" /> Canlı Demo
                         </a>
                       </Button>
                     )}
                     {project.repoUrl && (
-                      <Button variant="outline" size="sm" asChild>
+                      <Button variant="outline" size="sm" asChild className="flex-1">
                         <a href={project.repoUrl} target="_blank" rel="noopener noreferrer">
                           <Github className="mr-1 h-4 w-4" /> Repo
                         </a>
                       </Button>
                     )}
                   </div>
-                  <div className="flex gap-2 mt-auto pt-2 w-full justify-end border-t">
+                  <div className="flex gap-2 w-full justify-end pt-2">
                     <Button variant="outline" size="sm" onClick={() => handleEdit(project)} disabled={isSubmitting}>
                       <Edit className="mr-1 h-4 w-4" /> Düzenle
                     </Button>
@@ -277,7 +299,7 @@ export default function AdminProjectsPage() {
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel>İptal</AlertDialogCancel>
+                          <AlertDialogCancel disabled={isSubmitting}>İptal</AlertDialogCancel>
                           <AlertDialogAction onClick={() => handleDelete(project.id)} disabled={isSubmitting}>
                             {isSubmitting ? <Loader2 className="animate-spin mr-2" /> : 'Evet, Sil'}
                           </AlertDialogAction>

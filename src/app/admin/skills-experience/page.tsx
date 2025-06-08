@@ -5,6 +5,7 @@ import type { ChangeEvent, FormEvent } from 'react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, serverTimestamp, query, orderBy, Timestamp } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 import { app } from '@/lib/firebase';
 import type { SkillExperience, SkillExperienceFormData } from '@/types';
 import { PageHeader } from '@/components/page-header';
@@ -36,6 +37,7 @@ export default function AdminSkillsExperiencePage() {
   const router = useRouter();
   const { toast } = useToast();
   const db = getFirestore(app);
+  const auth = getAuth(app);
 
   const [formData, setFormData] = useState<SkillExperienceFormData>(initialFormData);
   const [items, setItems] = useState<SkillExperience[]>([]);
@@ -45,11 +47,20 @@ export default function AdminSkillsExperiencePage() {
   const [accordionValue, setAccordionValue] = useState<string | undefined>(undefined);
 
   useEffect(() => {
+     if (!auth.currentUser) {
+      // Potentially redirect or show error
+    }
     fetchItems();
-  }, []);
+  }, [auth.currentUser]);
 
   const fetchItems = async () => {
     setIsLoadingData(true);
+     if (!auth.currentUser) {
+        console.error("Attempted to fetch skills/experience without an authenticated user.");
+        toast({ title: 'Yetkilendirme Hatası', description: 'Kayıtları yüklemek için giriş yapmış olmalısınız.', variant: 'destructive' });
+        setIsLoadingData(false);
+        return;
+    }
     try {
       const itemsCollection = collection(db, 'skillsExperience');
       const q = query(itemsCollection, orderBy('createdAt', 'desc'));
@@ -93,6 +104,11 @@ export default function AdminSkillsExperiencePage() {
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
+     if (!auth.currentUser) {
+        console.error("Attempted to submit skill/experience without an authenticated user.");
+        toast({ title: 'Yetkilendirme Hatası', description: 'İşlem yapmak için giriş yapmış olmalısınız.', variant: 'destructive' });
+        return;
+    }
     if (!formData.name || !formData.description) {
       toast({ title: 'Eksik Bilgi', description: 'Lütfen Ad ve Açıklama alanlarını doldurun.', variant: 'destructive' });
       return;
@@ -154,6 +170,11 @@ export default function AdminSkillsExperiencePage() {
   };
 
   const handleDelete = async (itemId: string) => {
+     if (!auth.currentUser) {
+        console.error("Attempted to delete skill/experience without an authenticated user.");
+        toast({ title: 'Yetkilendirme Hatası', description: 'İşlem yapmak için giriş yapmış olmalısınız.', variant: 'destructive' });
+        return;
+    }
     setIsSubmitting(true);
     try {
       await deleteDoc(doc(db, 'skillsExperience', itemId));
@@ -210,7 +231,7 @@ export default function AdminSkillsExperiencePage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="name">{formData.type === 'skill' ? 'Beceri Adı' : 'Deneyim Başlığı/Rolü'}</Label>
+                  <Label htmlFor="name">{formData.type === 'skill' ? 'Beceri Adı' : 'Deneyim Başlığı/Şirket Adı'}</Label>
                   <Input id="name" name="name" value={formData.name} onChange={handleChange} required />
                 </div>
 
@@ -260,7 +281,7 @@ export default function AdminSkillsExperiencePage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="details">{formData.type === 'skill' ? 'Ek Detaylar (her satır yeni bir madde)' : 'Sorumluluklar (her satır yeni bir madde)'}</Label>
+                  <Label htmlFor="details">{formData.type === 'skill' ? 'Ek Detaylar (her satır yeni bir madde)' : 'Sorumluluklar/Notlar (her satır yeni bir madde)'}</Label>
                   <Textarea id="details" name="details" value={Array.isArray(formData.details) ? formData.details.join('\n') : ''} onChange={handleDetailsChange} rows={5} placeholder="Her bir detayı/sorumluluğu yeni bir satıra yazın." />
                 </div>
 
@@ -334,7 +355,7 @@ export default function AdminSkillsExperiencePage() {
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>İptal</AlertDialogCancel>
+                        <AlertDialogCancel disabled={isSubmitting}>İptal</AlertDialogCancel>
                         <AlertDialogAction onClick={() => handleDelete(item.id)} disabled={isSubmitting}>
                           {isSubmitting ? <Loader2 className="animate-spin mr-2" /> : 'Evet, Sil'}
                         </AlertDialogAction>

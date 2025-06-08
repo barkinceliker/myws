@@ -5,7 +5,7 @@ import type { ChangeEvent, FormEvent } from 'react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, serverTimestamp, query, orderBy, Timestamp } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth'; // Import getAuth
+import { getAuth } from 'firebase/auth';
 import { app } from '@/lib/firebase';
 import type { BlogPost, BlogPostFormData } from '@/types';
 import { PageHeader } from '@/components/page-header';
@@ -37,7 +37,7 @@ export default function AdminBlogPage() {
   const router = useRouter();
   const { toast } = useToast();
   const db = getFirestore(app);
-  const auth = getAuth(app); // Get auth instance
+  const auth = getAuth(app);
 
   const [formData, setFormData] = useState<BlogPostFormData>(initialFormData);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
@@ -47,25 +47,19 @@ export default function AdminBlogPage() {
   const [accordionValue, setAccordionValue] = useState<string | undefined>(undefined);
 
   useEffect(() => {
-    // Diagnostic log for current user
     console.log('AdminBlogPage - Current user UID:', auth.currentUser?.uid);
     if (!auth.currentUser) {
       console.warn('AdminBlogPage - No user is currently authenticated according to the client SDK. Firestore rules depending on auth will fail.');
-      // Optionally, redirect to login if no user is found, though this page should be protected by a route guard ideally
-      // router.push('/admin/login');
     }
     fetchBlogPosts();
-  }, [auth.currentUser]); // Re-run if auth state changes, though typically it's stable after login
+  }, [auth.currentUser]);
 
   const fetchBlogPosts = async () => {
     setIsLoadingData(true);
-    // Double check auth status right before the call
     if (!auth.currentUser) {
         console.error("Attempted to fetch blog posts without an authenticated user.");
         toast({ title: 'Yetkilendirme Hatası', description: 'Blog yazılarını yüklemek için giriş yapmış olmalısınız.', variant: 'destructive' });
         setIsLoadingData(false);
-        // Potentially redirect to login
-        // router.push('/admin/login');
         return;
     }
     try {
@@ -152,7 +146,7 @@ export default function AdminBlogPage() {
       author: post.author,
       tags: post.tags || [],
       imageUrl: post.imageUrl,
-      imageHint: post.imageHint,
+      imageHint: post.imageHint || 'blog header',
     });
     setEditingPostId(post.id);
     setAccordionValue("add-blog-post");
@@ -303,7 +297,7 @@ export default function AdminBlogPage() {
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>İptal</AlertDialogCancel>
+                        <AlertDialogCancel disabled={isSubmitting}>İptal</AlertDialogCancel>
                         <AlertDialogAction onClick={() => handleDelete(post.id)} disabled={isSubmitting}>
                            {isSubmitting ? <Loader2 className="animate-spin mr-2" /> : 'Evet, Sil'}
                         </AlertDialogAction>

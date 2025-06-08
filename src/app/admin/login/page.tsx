@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getAuth, signInWithEmailAndPassword, type AuthError } from 'firebase/auth';
-import { app } from '@/lib/firebase'; // Firebase app instance'ını içe aktarın
+import { app } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -21,9 +21,7 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
-  // app'in başlatıldığından emin olduktan sonra auth'ı alın
   const auth = app ? getAuth(app) : null;
-
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
