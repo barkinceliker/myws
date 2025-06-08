@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, type FormEvent } from 'react';
@@ -9,34 +10,47 @@ import { Label } from '@/components/ui/label';
 import { PageHeader } from '@/components/page-header';
 import { LogIn } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { app } from '@/lib/firebase'; // Firebase app instance'ını import edin
 
 export default function AdminLoginPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState(''); // State'i email olarak değiştirdik
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const auth = getAuth(app); // Firebase Auth instance'ını alın
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setIsLoading(true);
 
-    // Simulate API call / authentication
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    // In a real app, you would verify credentials here.
-    // For this demo, any non-empty username/password will "succeed".
-    if (username.trim() !== '' && password.trim() !== '') {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
       toast({
         title: "Login Successful",
         description: "Redirecting to dashboard...",
       });
       router.push('/admin/dashboard');
-    } else {
+    } catch (error: any) {
+      let errorMessage = "An unexpected error occurred.";
+      if (error.code) {
+        switch (error.code) {
+          case 'auth/user-not-found':
+          case 'auth/wrong-password':
+          case 'auth/invalid-credential':
+            errorMessage = "Invalid email or password.";
+            break;
+          case 'auth/invalid-email':
+            errorMessage = "Please enter a valid email address.";
+            break;
+          default:
+            errorMessage = error.message || "Login failed. Please try again.";
+        }
+      }
       toast({
         title: "Login Failed",
-        description: "Please enter valid credentials.",
+        description: errorMessage,
         variant: "destructive",
       });
       setIsLoading(false);
@@ -55,13 +69,13 @@ export default function AdminLoginPage() {
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
+                <Label htmlFor="email">Email</Label> {/* Label'ı Email olarak değiştirdik */}
                 <Input
-                  id="username"
-                  type="text"
-                  placeholder="admin_user"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  id="email"
+                  type="email" // Input tipini email olarak değiştirdik
+                  placeholder="admin@example.com" // Placeholder'ı güncelledik
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={isLoading}
                 />
