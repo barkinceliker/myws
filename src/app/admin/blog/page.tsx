@@ -5,6 +5,7 @@ import type { ChangeEvent, FormEvent } from 'react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, serverTimestamp, query, orderBy, Timestamp } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth'; // Import getAuth
 import { app } from '@/lib/firebase';
 import type { BlogPost, BlogPostFormData } from '@/types';
 import { PageHeader } from '@/components/page-header';
@@ -25,7 +26,7 @@ const initialFormData: BlogPostFormData = {
   slug: '',
   title: '',
   content: '',
-  publicationDate: format(new Date(), 'yyyy-MM-dd'), 
+  publicationDate: format(new Date(), 'yyyy-MM-dd'),
   author: '',
   tags: [],
   imageUrl: 'https://placehold.co/1200x600.png',
@@ -36,6 +37,7 @@ export default function AdminBlogPage() {
   const router = useRouter();
   const { toast } = useToast();
   const db = getFirestore(app);
+  const auth = getAuth(app); // Get auth instance
 
   const [formData, setFormData] = useState<BlogPostFormData>(initialFormData);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
@@ -45,11 +47,27 @@ export default function AdminBlogPage() {
   const [accordionValue, setAccordionValue] = useState<string | undefined>(undefined);
 
   useEffect(() => {
+    // Diagnostic log for current user
+    console.log('AdminBlogPage - Current user UID:', auth.currentUser?.uid);
+    if (!auth.currentUser) {
+      console.warn('AdminBlogPage - No user is currently authenticated according to the client SDK. Firestore rules depending on auth will fail.');
+      // Optionally, redirect to login if no user is found, though this page should be protected by a route guard ideally
+      // router.push('/admin/login');
+    }
     fetchBlogPosts();
-  }, []);
+  }, [auth.currentUser]); // Re-run if auth state changes, though typically it's stable after login
 
   const fetchBlogPosts = async () => {
     setIsLoadingData(true);
+    // Double check auth status right before the call
+    if (!auth.currentUser) {
+        console.error("Attempted to fetch blog posts without an authenticated user.");
+        toast({ title: 'Yetkilendirme Hatası', description: 'Blog yazılarını yüklemek için giriş yapmış olmalısınız.', variant: 'destructive' });
+        setIsLoadingData(false);
+        // Potentially redirect to login
+        // router.push('/admin/login');
+        return;
+    }
     try {
       const postsCollection = collection(db, 'blogPosts');
       const q = query(postsCollection, orderBy('createdAt', 'desc'));
@@ -71,7 +89,7 @@ export default function AdminBlogPage() {
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    if (name === 'title' && !editingPostId) { 
+    if (name === 'title' && !editingPostId) {
       const slug = value.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
       setFormData(prev => ({ ...prev, [name]: value, slug }));
     } else {
@@ -87,6 +105,11 @@ export default function AdminBlogPage() {
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
+    if (!auth.currentUser) {
+        console.error("Attempted to submit blog post without an authenticated user.");
+        toast({ title: 'Yetkilendirme Hatası', description: 'İşlem yapmak için giriş yapmış olmalısınız.', variant: 'destructive' });
+        return;
+    }
     if (!formData.title || !formData.content || !formData.slug) {
       toast({ title: 'Eksik Bilgi', description: 'Lütfen başlık, içerik ve slug alanlarını doldurun.', variant: 'destructive' });
       return;
@@ -125,7 +148,7 @@ export default function AdminBlogPage() {
       slug: post.slug,
       title: post.title,
       content: post.content,
-      publicationDate: post.publicationDate, 
+      publicationDate: post.publicationDate,
       author: post.author,
       tags: post.tags || [],
       imageUrl: post.imageUrl,
@@ -136,6 +159,11 @@ export default function AdminBlogPage() {
   };
 
   const handleDelete = async (postId: string) => {
+    if (!auth.currentUser) {
+        console.error("Attempted to delete blog post without an authenticated user.");
+        toast({ title: 'Yetkilendirme Hatası', description: 'İşlem yapmak için giriş yapmış olmalısınız.', variant: 'destructive' });
+        return;
+    }
     setIsSubmitting(true);
     try {
       await deleteDoc(doc(db, 'blogPosts', postId));
@@ -148,7 +176,7 @@ export default function AdminBlogPage() {
       setIsSubmitting(false);
     }
   };
-  
+
   const handleCancelEdit = () => {
     setFormData(initialFormData);
     setEditingPostId(null);
