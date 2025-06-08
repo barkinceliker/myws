@@ -22,8 +22,8 @@ export default function AdminDashboardPage() {
             <CardContent>
               <CardDescription>Yeni projeler ekleyin veya mevcutları yönetin.</CardDescription>
               <Button variant="outline" className="mt-4 w-full" asChild>
-                <Link href="/admin/projects/add">
-                  <PlusCircle className="mr-2 h-5 w-5" /> Yeni Proje Ekle
+                <Link href="/admin/projects">
+                  <PlusCircle className="mr-2 h-5 w-5" /> Projeleri Yönet / Yeni Ekle
                 </Link>
               </Button>
             </CardContent>
@@ -37,8 +37,8 @@ export default function AdminDashboardPage() {
             <CardContent>
               <CardDescription>Yeni blog yazıları oluşturun veya mevcutları güncelleyin.</CardDescription>
               <Button variant="outline" className="mt-4 w-full" asChild>
-                <Link href="/admin/blog/add">
-                  <PlusCircle className="mr-2 h-5 w-5" /> Yeni Blog Yazısı Ekle
+                <Link href="/admin/blog">
+                  <PlusCircle className="mr-2 h-5 w-5" /> Blog Yazılarını Yönet / Yeni Ekle
                 </Link>
               </Button>
             </CardContent>
