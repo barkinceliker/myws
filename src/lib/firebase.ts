@@ -18,20 +18,35 @@ let app: FirebaseApp | undefined;
 // Firebase'in yalnızca bir kez başlatıldığından emin olun ve temel yapılandırmanın mevcut olup olmadığını kontrol edin
 if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
   console.error(
-    "Firebase Yapılandırma Hatası: NEXT_PUBLIC_FIREBASE_API_KEY veya NEXT_PUBLIC_FIREBASE_PROJECT_ID ayarlanmamış. Lütfen projenizin KÖK DİZİNİNDE .env.local dosyanızın olduğundan, doğru değerleri içerdiğinden ve değişikliklerden sonra geliştirme sunucunuzu YENİDEN BAŞLATTIĞINIZDAN emin olun."
+    "CRITICAL Firebase Configuration Error during build: NEXT_PUBLIC_FIREBASE_API_KEY or NEXT_PUBLIC_FIREBASE_PROJECT_ID is missing or undefined. " +
+    "Please meticulously verify these environment variables are correctly set with valid values and accessible in your deployment platform's (e.g., Netlify, Vercel) settings for this project. " +
+    "Firebase cannot be initialized without them. " +
+    `Detected API Key during build: '${firebaseConfig.apiKey}', Detected Project ID during build: '${firebaseConfig.projectId}'`
   );
-  // Firebase SDK, apiKey veya projectId initializeApp sırasında eksik/geçersiz ise kendi hatasını verecektir.
-  // Burada app'i başlatmayarak bu durumu yönetiyoruz.
+  // app kalır undefined, sonraki Firebase çağrıları "No Firebase App '[DEFAULT]'" hatasına yol açacaktır.
 } else {
   if (!getApps().length) {
-    app = initializeApp(firebaseConfig);
+    try {
+      app = initializeApp(firebaseConfig);
+      console.log("Firebase App initialized successfully during build.");
+    } catch (error) {
+      console.error("Error during Firebase initializeApp() in build:", error);
+      console.error("Firebase config used:", JSON.stringify({
+        apiKeyProvided: !!firebaseConfig.apiKey,
+        projectIdProvided: !!firebaseConfig.projectId,
+        authDomainProvided: !!firebaseConfig.authDomain,
+        // Diğer hassas olmayan ayarları loglayabilirsiniz, ancak anahtarları tam olarak loglamaktan kaçının.
+      }));
+    }
   } else {
     app = getApp();
+    console.log("Firebase App already exists during build, using existing app.");
   }
 }
 
 let analytics: Analytics | undefined;
 // Analytics'i yalnızca istemci tarafında, app başarıyla başlatıldıysa ve measurementId mevcutsa başlatın
+// Build sırasında typeof window === 'undefined' olacaktır, bu yüzden bu blok build sırasında çalışmaz.
 if (app && typeof window !== 'undefined' && firebaseConfig.measurementId) {
   try {
     analytics = getAnalytics(app);
@@ -43,4 +58,3 @@ if (app && typeof window !== 'undefined' && firebaseConfig.measurementId) {
 
 // Başlatılmış app ve analytics'i dışa aktar
 export { app, analytics };
-
