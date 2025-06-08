@@ -1,8 +1,15 @@
 
 import { PageHeader } from '@/components/page-header';
-import { SkillItem, type Skill } from '@/components/skill-item';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Code, Database, Palette, Server, Smartphone, Cloud, Brain, BarChartBig } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+
+interface Skill {
+  name: string;
+  proficiency: number; // 0-100
+  Icon?: LucideIcon;
+  category: string;
+}
 
 const skillsData: Skill[] = [
   // Frontend
@@ -44,38 +51,54 @@ const categoryIcons: Record<string, LucideIcon> = {
   'Design': Palette,
 };
 
-type LucideIcon = React.ComponentType<React.SVGProps<SVGSVGElement>>;
-
-
 const skillCategories = ['Frontend', 'Backend', 'Databases', 'Tools', 'Design'];
 
 export default function SkillsPage() {
   return (
     <>
       <PageHeader
-        title="Skills & Expertise"
-        description="A showcase of my technical skills and proficiency levels across various domains."
+        title="Skills & Expertise Dashboard"
+        description="A visual overview of my technical skills and proficiency levels across various domains."
       />
       <div className="container py-12 md:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-start">
           {skillCategories.map(category => {
-            const CategoryIcon = categoryIcons[category] || Code; 
+            const CategoryIcon = categoryIcons[category] || Code;
+            const categorySkills = skillsData.filter(skill => skill.category === category);
             return (
               <Card key={category} className="shadow-xl hover:shadow-2xl transition-shadow duration-300 flex flex-col h-full">
                 <CardHeader>
-                  <CardTitle className="font-headline text-2xl md:text-3xl text-primary flex items-center">
+                  <CardTitle className="font-headline text-2xl text-primary flex items-center">
                     <CategoryIcon className="h-7 w-7 mr-3 text-accent" />
                     {category}
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="flex-grow">
-                  <div className="grid sm:grid-cols-2 gap-6">
-                    {skillsData
-                      .filter(skill => skill.category === category)
-                      .map((skill) => (
-                        <SkillItem key={skill.name} skill={skill} />
-                    ))}
-                  </div>
+                <CardContent className="flex-grow space-y-6">
+                  {categorySkills.map((skill) => {
+                    const SkillIcon = skill.Icon || Code;
+                    return (
+                      <div key={skill.name} className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <SkillIcon className="h-5 w-5 mr-2 text-muted-foreground" />
+                            <span className="font-medium text-foreground/90">{skill.name}</span>
+                          </div>
+                          <span className="text-sm font-semibold text-primary">{skill.proficiency}%</span>
+                        </div>
+                        <div className="w-full bg-muted rounded-full h-2.5 dark:bg-secondary/50">
+                          <div
+                            className="bg-primary h-2.5 rounded-full transition-all duration-500 ease-out"
+                            style={{ width: `${skill.proficiency}%` }}
+                            aria-valuenow={skill.proficiency}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                            role="progressbar"
+                            aria-label={`${skill.name} proficiency`}
+                          ></div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </CardContent>
               </Card>
             );
@@ -85,4 +108,3 @@ export default function SkillsPage() {
     </>
   );
 }
-    
