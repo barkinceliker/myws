@@ -17,7 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Loader2, PlusCircle, Trash2, Edit, ArrowLeft, ArrowRight, FileText } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Edit, ArrowLeft, FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import { format } from 'date-fns';
@@ -49,8 +49,7 @@ export default function AdminBlogPage() {
   const fetchBlogPosts = useCallback(async () => {
     setIsLoadingData(true);
     if (!auth.currentUser) {
-        console.error("Attempted to fetch blog posts without an authenticated user.");
-        toast({ title: 'Yetkilendirme Hatası', description: 'Blog yazılarını yüklemek için giriş yapmış olmalısınız.', variant: 'destructive' });
+        console.warn("AdminBlogPage: Attempted to fetch blog posts without an authenticated user.");
         setIsLoadingData(false);
         return;
     }
@@ -75,17 +74,22 @@ export default function AdminBlogPage() {
 
   useEffect(() => {
     console.log('AdminBlogPage - Current user UID:', auth.currentUser?.uid);
-    if (auth.currentUser) {
-      fetchBlogPosts();
-    } else {
-      console.warn('AdminBlogPage - No user is currently authenticated or auth state not yet initialized. Firestore rules depending on auth might fail.');
-      setIsLoadingData(false);
-    }
-  }, [auth, auth.currentUser, fetchBlogPosts]);
+    const unsubscribe = auth.onAuthStateChanged(user => {
+      if (user) {
+        fetchBlogPosts();
+      } else {
+        setIsLoadingData(false);
+        setBlogPosts([]);
+        console.warn('AdminBlogPage - No user authenticated. Data fetching aborted.');
+      }
+    });
+    return () => unsubscribe();
+  }, [auth, fetchBlogPosts]);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     if (name === 'title' && !editingPostId) {
+      // Create slug from title only when adding a new post and title changes
       const slug = value.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
       setFormData(prev => ({ ...prev, [name]: value, slug }));
     } else {
@@ -144,7 +148,7 @@ export default function AdminBlogPage() {
       slug: post.slug,
       title: post.title,
       content: post.content,
-      publicationDate: post.publicationDate,
+      publicationDate: post.publicationDate, // Firestore'dan gelen tarihi doğrudan kullan
       author: post.author,
       tags: post.tags || [],
       imageUrl: post.imageUrl,
@@ -191,61 +195,58 @@ export default function AdminBlogPage() {
           <Button variant="outline" onClick={() => router.back()} aria-label="Geri" className="shadow-sm hover:shadow-md transition-shadow">
             <ArrowLeft className="mr-2 h-4 w-4" /> Geri
           </Button>
-          <Button variant="outline" onClick={() => router.forward()} aria-label="İleri" className="shadow-sm hover:shadow-md transition-shadow">
-            İleri <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
         </div>
-        <Accordion type="single" collapsible className="w-full mb-10 bg-card p-4 sm:p-6 rounded-lg shadow-lg border" value={accordionValue} onValueChange={setAccordionValue}>
+        <Accordion type="single" collapsible className="w-full mb-10 bg-card p-4 sm:p-6 rounded-lg shadow-xl border" value={accordionValue} onValueChange={setAccordionValue}>
           <AccordionItem value="add-blog-post" className="border-b-0">
-            <AccordionTrigger className="text-xl font-headline text-primary hover:no-underline">
+            <AccordionTrigger className="text-xl font-headline text-primary hover:no-underline data-[state=open]:pb-4 data-[state=closed]:pb-0">
               <div className="flex items-center">
                 <PlusCircle className="mr-3 h-6 w-6 text-accent" />
                 {editingPostId ? 'Blog Yazısını Düzenle' : 'Yeni Blog Yazısı Ekle'}
               </div>
             </AccordionTrigger>
-            <AccordionContent className="pt-6">
+            <AccordionContent className="pt-6 border-t border-border/70">
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                         <Label htmlFor="title" className="text-sm font-medium text-foreground/90">Başlık</Label>
-                        <Input id="title" name="title" value={formData.title} onChange={handleChange} required className="shadow-sm"/>
+                        <Input id="title" name="title" value={formData.title} onChange={handleChange} required className="shadow-sm focus:ring-primary focus:border-primary"/>
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="slug" className="text-sm font-medium text-foreground/90">Slug (URL)</Label>
-                        <Input id="slug" name="slug" value={formData.slug} onChange={handleChange} required disabled={!!editingPostId} className="shadow-sm"/>
+                        <Input id="slug" name="slug" value={formData.slug} onChange={handleChange} required disabled={!!editingPostId} className="shadow-sm focus:ring-primary focus:border-primary"/>
                         {!editingPostId && <p className="text-xs text-muted-foreground mt-1">Başlık yazarken otomatik oluşturulur.</p>}
                     </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="content" className="text-sm font-medium text-foreground/90">İçerik (HTML destekler)</Label>
-                  <Textarea id="content" name="content" value={formData.content} onChange={handleChange} rows={10} required className="shadow-sm"/>
+                  <Label htmlFor="content" className="text-sm font-medium text-foreground/90">İçerik (Markdown veya HTML destekler)</Label>
+                  <Textarea id="content" name="content" value={formData.content} onChange={handleChange} rows={10} required className="shadow-sm focus:ring-primary focus:border-primary"/>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                         <Label htmlFor="publicationDate" className="text-sm font-medium text-foreground/90">Yayın Tarihi</Label>
-                        <Input id="publicationDate" name="publicationDate" type="date" value={formData.publicationDate} onChange={handleChange} required className="shadow-sm"/>
+                        <Input id="publicationDate" name="publicationDate" type="date" value={formData.publicationDate} onChange={handleChange} required className="shadow-sm focus:ring-primary focus:border-primary"/>
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="author" className="text-sm font-medium text-foreground/90">Yazar</Label>
-                        <Input id="author" name="author" value={formData.author} onChange={handleChange} required className="shadow-sm"/>
+                        <Input id="author" name="author" value={formData.author} onChange={handleChange} required className="shadow-sm focus:ring-primary focus:border-primary"/>
                     </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                         <Label htmlFor="tags" className="text-sm font-medium text-foreground/90">Etiketler (virgülle ayırın)</Label>
-                        <Input id="tags" name="tags" value={Array.isArray(formData.tags) ? formData.tags.join(', ') : ''} onChange={handleTagsChange} className="shadow-sm"/>
+                        <Input id="tags" name="tags" value={Array.isArray(formData.tags) ? formData.tags.join(', ') : ''} onChange={handleTagsChange} className="shadow-sm focus:ring-primary focus:border-primary"/>
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="imageUrl" className="text-sm font-medium text-foreground/90">Görsel URL</Label>
-                        <Input id="imageUrl" name="imageUrl" type="url" value={formData.imageUrl} onChange={handleChange} className="shadow-sm"/>
+                        <Input id="imageUrl" name="imageUrl" type="url" value={formData.imageUrl} onChange={handleChange} className="shadow-sm focus:ring-primary focus:border-primary"/>
                     </div>
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="imageHint" className="text-sm font-medium text-foreground/90">Görsel İpucu (AI için)</Label>
-                    <Input id="imageHint" name="imageHint" value={formData.imageHint} onChange={handleChange} className="shadow-sm"/>
+                    <Input id="imageHint" name="imageHint" value={formData.imageHint} onChange={handleChange} className="shadow-sm focus:ring-primary focus:border-primary"/>
                 </div>
                 <div className="flex gap-3 pt-2">
-                  <Button type="submit" disabled={isSubmitting} className="shadow-md hover:shadow-lg transition-shadow">
+                  <Button type="submit" disabled={isSubmitting} className="shadow-md hover:shadow-lg transition-shadow min-w-[180px]">
                     {isSubmitting ? <Loader2 className="animate-spin mr-2" /> : (editingPostId ? 'Yazıyı Güncelle' : 'Yeni Yazı Oluştur')}
                   </Button>
                    {editingPostId && (
@@ -259,7 +260,7 @@ export default function AdminBlogPage() {
           </AccordionItem>
         </Accordion>
 
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-8 border-b border-border/70 pb-4">
             <h2 className="font-headline text-3xl font-semibold text-primary flex items-center">
                 <FileText size={32} className="mr-3 text-accent"/>
                 Mevcut Blog Yazıları
@@ -272,7 +273,7 @@ export default function AdminBlogPage() {
             <p className="text-lg">Blog yazıları yükleniyor, lütfen bekleyin...</p>
           </div>
         ) : blogPosts.length === 0 ? (
-           <div className="text-center py-12">
+           <div className="text-center py-12 bg-card border rounded-lg shadow-md">
             <FileText size={64} className="mx-auto text-muted-foreground opacity-50 mb-4" />
             <p className="text-xl text-muted-foreground">Henüz eklenmiş blog yazısı bulunmuyor.</p>
             <p className="text-sm text-muted-foreground mt-2">Yukarıdaki bölümden yeni bir yazı ekleyebilirsiniz.</p>
@@ -280,28 +281,29 @@ export default function AdminBlogPage() {
         ) : (
           <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-8">
             {blogPosts.map((post) => (
-              <Card key={post.id} className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300 border rounded-lg overflow-hidden">
+              <Card key={post.id} className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300 border rounded-lg overflow-hidden bg-card/80 backdrop-blur-sm">
                 <CardHeader className="p-0">
                   {post.imageUrl && (
-                     <div className="relative w-full h-56">
-                      <Image src={post.imageUrl} alt={post.title} fill style={{objectFit: 'cover'}} data-ai-hint={post.imageHint || "blog header"} className="transition-transform duration-300 hover:scale-105"/>
+                     <div className="relative w-full h-56 group">
+                      <Image src={post.imageUrl} alt={post.title} fill style={{objectFit: 'cover'}} data-ai-hint={post.imageHint || "blog header"} className="transition-transform duration-300 group-hover:scale-105"/>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
                     </div>
                   )}
                 </CardHeader>
                 <div className="p-5 flex flex-col flex-grow">
-                  <CardTitle className="font-headline text-2xl text-primary mb-2">{post.title}</CardTitle>
+                  <CardTitle className="font-headline text-2xl text-primary mb-2 line-clamp-2">{post.title}</CardTitle>
                   <CardDescription className="text-xs text-muted-foreground mb-1">
                     Yazar: {post.author || "N/A"} | Tarih: {post.publicationDate} | Slug: {post.slug}
                   </CardDescription>
                    {post.tags && post.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mt-2 mb-3">
-                      {post.tags.map(tag => <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>)}
+                      {post.tags.map(tag => <Badge key={tag} variant="secondary" className="text-xs py-1 px-2 shadow-sm">{tag}</Badge>)}
                     </div>
                   )}
-                  <div className="text-sm text-foreground/80 mb-4 flex-grow line-clamp-3" dangerouslySetInnerHTML={{ __html: post.content.substring(0, 250) + (post.content.length > 250 ? '...' : '') }} />
+                  <div className="text-sm text-foreground/80 mb-4 flex-grow line-clamp-3 prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: post.content.substring(0, 250) + (post.content.length > 250 ? '...' : '') }} />
 
                   <CardFooter className="flex justify-end gap-2 p-0 mt-auto border-t border-border/70 pt-4">
-                    <Button variant="outline" size="sm" onClick={() => handleEdit(post)} disabled={isSubmitting} className="shadow-sm hover:shadow-md transition-all">
+                    <Button variant="outline" size="sm" onClick={() => handleEdit(post)} disabled={isSubmitting} className="shadow-sm hover:shadow-md transition-all hover:border-primary text-primary hover:text-primary">
                       <Edit className="mr-1.5 h-4 w-4" /> Düzenle
                     </Button>
                     <AlertDialog>
@@ -310,9 +312,9 @@ export default function AdminBlogPage() {
                           <Trash2 className="mr-1.5 h-4 w-4" /> Sil
                         </Button>
                       </AlertDialogTrigger>
-                      <AlertDialogContent className="border shadow-xl rounded-lg">
+                      <AlertDialogContent className="border shadow-xl rounded-lg bg-card">
                         <AlertDialogHeader>
-                          <AlertDialogTitle className="font-headline text-xl">Emin misiniz?</AlertDialogTitle>
+                          <AlertDialogTitle className="font-headline text-xl text-destructive">Emin misiniz?</AlertDialogTitle>
                           <AlertDialogDescription className="text-muted-foreground">
                             Bu işlem geri alınamaz. &quot;{post.title}&quot; adlı blog yazısını kalıcı olarak silmek istediğinizden emin misiniz?
                           </AlertDialogDescription>
@@ -335,5 +337,3 @@ export default function AdminBlogPage() {
     </>
   );
 }
-
-    

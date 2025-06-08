@@ -17,7 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Loader2, PlusCircle, Trash2, Edit, ExternalLink, Github, ArrowLeft, ArrowRight, FolderKanban } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Edit, ExternalLink, Github, ArrowLeft, FolderKanban } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 
@@ -47,9 +47,10 @@ export default function AdminProjectsPage() {
   const fetchProjects = useCallback(async () => {
     setIsLoadingData(true);
     if (!auth.currentUser) {
-        console.error("Attempted to fetch projects without an authenticated user.");
-        toast({ title: 'Yetkilendirme Hatası', description: 'Projeleri yüklemek için giriş yapmış olmalısınız.', variant: 'destructive' });
+        console.warn("AdminProjectsPage: Attempted to fetch projects without an authenticated user.");
         setIsLoadingData(false);
+        // Optionally show a toast, but avoid if it's too noisy during initial auth check
+        // toast({ title: 'Yetkilendirme Hatası', description: 'Projeleri yüklemek için giriş yapmış olmalısınız.', variant: 'destructive' });
         return;
     }
     try {
@@ -60,7 +61,7 @@ export default function AdminProjectsPage() {
         id: doc.id,
         ...doc.data(),
         tags: Array.isArray(doc.data().tags) ? doc.data().tags : [],
-        createdAt: doc.data().createdAt as Timestamp,
+        createdAt: doc.data().createdAt as Timestamp, // Firestore'dan gelen Timestamp olarak al
       })) as Project[];
       setProjects(projectsData);
     } catch (error) {
@@ -72,12 +73,19 @@ export default function AdminProjectsPage() {
   }, [auth, db, toast]);
 
   useEffect(() => {
-    if (auth.currentUser) {
-      fetchProjects();
-    } else {
-      setIsLoadingData(false);
-    }
-  }, [auth, auth.currentUser, fetchProjects]);
+    const unsubscribe = auth.onAuthStateChanged(user => {
+      if (user) {
+        fetchProjects();
+      } else {
+        // No user is signed in.
+        setIsLoadingData(false); // Ensure loading state is false if no user
+        setProjects([]); // Clear projects if user logs out
+        console.warn("AdminProjectsPage: No user authenticated. Data fetching aborted.");
+      }
+    });
+    return () => unsubscribe(); // Cleanup subscription on unmount
+  }, [auth, fetchProjects]);
+
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -86,6 +94,7 @@ export default function AdminProjectsPage() {
 
   const handleTagsChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
+    // Kullanıcı etiketleri virgülle ayırarak girer, boşlukları temizler ve boş etiketleri filtreler
     const tagsArray = value.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
     setFormData(prev => ({ ...prev, tags: tagsArray }));
   };
@@ -109,20 +118,20 @@ export default function AdminProjectsPage() {
         const projectRef = doc(db, 'projects', editingProjectId);
         await updateDoc(projectRef, {
           ...formData,
-          updatedAt: serverTimestamp(),
+          updatedAt: serverTimestamp(), // Güncelleme zamanını ekle
         });
         toast({ title: 'Başarılı!', description: 'Proje başarıyla güncellendi.' });
       } else {
         await addDoc(collection(db, 'projects'), {
           ...formData,
-          createdAt: serverTimestamp(),
+          createdAt: serverTimestamp(), // Oluşturma zamanını ekle
         });
         toast({ title: 'Başarılı!', description: 'Yeni proje başarıyla eklendi.' });
       }
-      setFormData(initialFormData);
-      setEditingProjectId(null);
-      fetchProjects(); 
-      setAccordionValue(undefined); 
+      setFormData(initialFormData); // Formu sıfırla
+      setEditingProjectId(null); // Düzenleme modundan çık
+      fetchProjects(); // Projeleri yeniden yükle
+      setAccordionValue(undefined); // Akordeonu kapat
     } catch (error) {
       console.error("Error saving project: ", error);
       toast({ title: 'Hata', description: 'Proje kaydedilirken bir sorun oluştu.', variant: 'destructive' });
@@ -132,17 +141,17 @@ export default function AdminProjectsPage() {
   };
 
   const handleEdit = (project: Project) => {
-    setFormData({
+    setFormData({ // Formu düzenlenecek projenin bilgileriyle doldur
         title: project.title,
         description: project.description,
         imageUrl: project.imageUrl,
         imageHint: project.imageHint || 'project image',
-        tags: project.tags || [], 
+        tags: project.tags || [], // tags null/undefined ise boş dizi ata
         liveDemoUrl: project.liveDemoUrl || '',
         repoUrl: project.repoUrl || '',
     });
-    setEditingProjectId(project.id);
-    setAccordionValue("add-project"); 
+    setEditingProjectId(project.id); // Düzenleme moduna geç ve proje ID'sini sakla
+    setAccordionValue("add-project"); // Akordeonu aç
   };
 
   const handleDelete = async (projectId: string) => {
@@ -151,11 +160,11 @@ export default function AdminProjectsPage() {
         toast({ title: 'Yetkilendirme Hatası', description: 'İşlem yapmak için giriş yapmış olmalısınız.', variant: 'destructive' });
         return;
     }
-    setIsSubmitting(true); 
+    setIsSubmitting(true); // Silme işlemi için de yükleme durumu kullanılabilir
     try {
       await deleteDoc(doc(db, 'projects', projectId));
       toast({ title: 'Başarılı!', description: 'Proje başarıyla silindi.' });
-      fetchProjects(); 
+      fetchProjects(); // Projeleri yeniden yükle
     } catch (error) {
       console.error("Error deleting project: ", error);
       toast({ title: 'Hata', description: 'Proje silinirken bir sorun oluştu.', variant: 'destructive' });
@@ -167,7 +176,7 @@ export default function AdminProjectsPage() {
   const handleCancelEdit = () => {
     setFormData(initialFormData);
     setEditingProjectId(null);
-    setAccordionValue(undefined); 
+    setAccordionValue(undefined); // Akordeonu kapat
   }
 
   return (
@@ -182,56 +191,53 @@ export default function AdminProjectsPage() {
           <Button variant="outline" onClick={() => router.back()} aria-label="Geri" className="shadow-sm hover:shadow-md transition-shadow">
             <ArrowLeft className="mr-2 h-4 w-4" /> Geri
           </Button>
-          <Button variant="outline" onClick={() => router.forward()} aria-label="İleri" className="shadow-sm hover:shadow-md transition-shadow">
-            İleri <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
         </div>
-        <Accordion type="single" collapsible className="w-full mb-10 bg-card p-4 sm:p-6 rounded-lg shadow-lg border" value={accordionValue} onValueChange={setAccordionValue}>
+        <Accordion type="single" collapsible className="w-full mb-10 bg-card p-4 sm:p-6 rounded-lg shadow-xl border" value={accordionValue} onValueChange={setAccordionValue}>
           <AccordionItem value="add-project" className="border-b-0">
-            <AccordionTrigger className="text-xl font-headline text-primary hover:no-underline">
+            <AccordionTrigger className="text-xl font-headline text-primary hover:no-underline data-[state=open]:pb-4 data-[state=closed]:pb-0">
               <div className="flex items-center">
                 <PlusCircle className="mr-3 h-6 w-6 text-accent" />
                 {editingProjectId ? 'Projeyi Düzenle' : 'Yeni Proje Ekle'}
               </div>
             </AccordionTrigger>
-            <AccordionContent className="pt-6">
+            <AccordionContent className="pt-6 border-t border-border/70">
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="title" className="text-sm font-medium text-foreground/90">Proje Başlığı</Label>
-                    <Input id="title" name="title" value={formData.title} onChange={handleChange} required className="shadow-sm"/>
+                    <Input id="title" name="title" value={formData.title} onChange={handleChange} required className="shadow-sm focus:ring-primary focus:border-primary"/>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="tags" className="text-sm font-medium text-foreground/90">Etiketler (virgülle ayırın)</Label>
-                    <Input id="tags" name="tags" value={Array.isArray(formData.tags) ? formData.tags.join(', ') : ''} onChange={handleTagsChange} placeholder="Örn: React, Next.js" className="shadow-sm"/>
+                    <Input id="tags" name="tags" value={Array.isArray(formData.tags) ? formData.tags.join(', ') : ''} onChange={handleTagsChange} placeholder="Örn: React, Next.js" className="shadow-sm focus:ring-primary focus:border-primary"/>
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="description" className="text-sm font-medium text-foreground/90">Açıklama</Label>
-                  <Textarea id="description" name="description" value={formData.description} onChange={handleChange} rows={4} required className="shadow-sm"/>
+                  <Textarea id="description" name="description" value={formData.description} onChange={handleChange} rows={4} required className="shadow-sm focus:ring-primary focus:border-primary"/>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="imageUrl" className="text-sm font-medium text-foreground/90">Görsel URL</Label>
-                    <Input id="imageUrl" name="imageUrl" type="url" value={formData.imageUrl} onChange={handleChange} className="shadow-sm"/>
+                    <Input id="imageUrl" name="imageUrl" type="url" value={formData.imageUrl} onChange={handleChange} className="shadow-sm focus:ring-primary focus:border-primary"/>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="imageHint" className="text-sm font-medium text-foreground/90">Görsel İpucu (AI için)</Label>
-                    <Input id="imageHint" name="imageHint" value={formData.imageHint} onChange={handleChange} placeholder="Örn: teknoloji projesi" className="shadow-sm"/>
+                    <Input id="imageHint" name="imageHint" value={formData.imageHint} onChange={handleChange} placeholder="Örn: teknoloji projesi" className="shadow-sm focus:ring-primary focus:border-primary"/>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="liveDemoUrl" className="text-sm font-medium text-foreground/90">Canlı Demo URL</Label>
-                    <Input id="liveDemoUrl" name="liveDemoUrl" type="url" value={formData.liveDemoUrl} onChange={handleChange} className="shadow-sm"/>
+                    <Input id="liveDemoUrl" name="liveDemoUrl" type="url" value={formData.liveDemoUrl} onChange={handleChange} className="shadow-sm focus:ring-primary focus:border-primary"/>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="repoUrl" className="text-sm font-medium text-foreground/90">Repo URL</Label>
-                    <Input id="repoUrl" name="repoUrl" type="url" value={formData.repoUrl} onChange={handleChange} className="shadow-sm"/>
+                    <Input id="repoUrl" name="repoUrl" type="url" value={formData.repoUrl} onChange={handleChange} className="shadow-sm focus:ring-primary focus:border-primary"/>
                   </div>
                 </div>
                 <div className="flex gap-3 pt-2">
-                  <Button type="submit" disabled={isSubmitting} className="shadow-md hover:shadow-lg transition-shadow">
+                  <Button type="submit" disabled={isSubmitting} className="shadow-md hover:shadow-lg transition-shadow min-w-[180px]">
                     {isSubmitting ? <Loader2 className="animate-spin mr-2" /> : (editingProjectId ? 'Proje Bilgilerini Güncelle' : 'Yeni Proje Oluştur')}
                   </Button>
                   {editingProjectId && (
@@ -245,7 +251,7 @@ export default function AdminProjectsPage() {
           </AccordionItem>
         </Accordion>
 
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-8 border-b border-border/70 pb-4">
             <h2 className="font-headline text-3xl font-semibold text-primary flex items-center">
                 <FolderKanban size={32} className="mr-3 text-accent"/>
                 Mevcut Projeler
@@ -258,7 +264,7 @@ export default function AdminProjectsPage() {
             <p className="text-lg">Projeler yükleniyor, lütfen bekleyin...</p>
           </div>
         ) : projects.length === 0 ? (
-          <div className="text-center py-12">
+          <div className="text-center py-12 bg-card border rounded-lg shadow-md">
             <FolderKanban size={64} className="mx-auto text-muted-foreground opacity-50 mb-4" />
             <p className="text-xl text-muted-foreground">Henüz eklenmiş proje bulunmuyor.</p>
             <p className="text-sm text-muted-foreground mt-2">Yukarıdaki bölümden yeni bir proje ekleyebilirsiniz.</p>
@@ -266,22 +272,23 @@ export default function AdminProjectsPage() {
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {projects.map((project) => (
-              <Card key={project.id} className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300 border rounded-lg overflow-hidden">
+              <Card key={project.id} className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300 border rounded-lg overflow-hidden bg-card/80 backdrop-blur-sm">
                 <CardHeader className="p-0">
                   {project.imageUrl && (
-                    <div className="relative w-full h-56">
-                      <Image src={project.imageUrl} alt={project.title} fill style={{objectFit: 'cover'}} data-ai-hint={project.imageHint || "project image"} className="transition-transform duration-300 hover:scale-105"/>
+                    <div className="relative w-full h-56 group">
+                      <Image src={project.imageUrl} alt={project.title} fill style={{objectFit: 'cover'}} data-ai-hint={project.imageHint || "project image"} className="transition-transform duration-300 group-hover:scale-105"/>
+                       <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
                     </div>
                   )}
                 </CardHeader>
                 <div className="p-5 flex flex-col flex-grow">
-                  <CardTitle className="font-headline text-2xl text-primary mb-2">{project.title}</CardTitle>
+                  <CardTitle className="font-headline text-2xl text-primary mb-2 line-clamp-2">{project.title}</CardTitle>
                   {project.tags && project.tags.length > 0 && (
                     <div className="flex flex-wrap gap-2 mb-3">
-                      {project.tags.map(tag => <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>)}
+                      {project.tags.map(tag => <Badge key={tag} variant="secondary" className="text-xs py-1 px-2.5 shadow-sm">{tag}</Badge>)}
                     </div>
                   )}
-                  <CardDescription className="text-sm text-foreground/80 mb-4 flex-grow line-clamp-4">{project.description}</CardDescription>
+                  <CardDescription className="text-sm text-foreground/80 mb-4 flex-grow line-clamp-4 leading-relaxed">{project.description}</CardDescription>
                   <CardFooter className="flex flex-col items-stretch gap-3 p-0 mt-auto border-t border-border/70 pt-4">
                     <div className="flex gap-2 w-full">
                       {project.liveDemoUrl && (
@@ -300,7 +307,7 @@ export default function AdminProjectsPage() {
                       )}
                     </div>
                     <div className="flex gap-2 w-full justify-end pt-2">
-                      <Button variant="outline" size="sm" onClick={() => handleEdit(project)} disabled={isSubmitting} className="shadow-sm hover:shadow-md transition-all">
+                      <Button variant="outline" size="sm" onClick={() => handleEdit(project)} disabled={isSubmitting} className="shadow-sm hover:shadow-md transition-all hover:border-primary text-primary hover:text-primary">
                         <Edit className="mr-1.5 h-4 w-4" /> Düzenle
                       </Button>
                       <AlertDialog>
@@ -309,9 +316,9 @@ export default function AdminProjectsPage() {
                             <Trash2 className="mr-1.5 h-4 w-4" /> Sil
                           </Button>
                         </AlertDialogTrigger>
-                        <AlertDialogContent className="border shadow-xl rounded-lg">
+                        <AlertDialogContent className="border shadow-xl rounded-lg bg-card">
                           <AlertDialogHeader>
-                            <AlertDialogTitle className="font-headline text-xl">Emin misiniz?</AlertDialogTitle>
+                            <AlertDialogTitle className="font-headline text-xl text-destructive">Emin misiniz?</AlertDialogTitle>
                             <AlertDialogDescription className="text-muted-foreground">
                               Bu işlem geri alınamaz. &quot;{project.title}&quot; adlı projeyi kalıcı olarak silmek istediğinizden emin misiniz?
                             </AlertDialogDescription>
@@ -335,5 +342,3 @@ export default function AdminProjectsPage() {
     </>
   );
 }
-
-    

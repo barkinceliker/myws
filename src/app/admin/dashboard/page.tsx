@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Briefcase, FileText, Award, ArrowLeft, ArrowRight, Home, UserCircle, ClipboardList, Settings } from 'lucide-react';
+import { Briefcase, FileText, Award, ArrowLeft, Settings, UserCircle, ClipboardList } from 'lucide-react';
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -16,7 +16,7 @@ export default function AdminDashboardPage() {
       title: "Ana Sayfa İçeriği",
       description: "Ana sayfanızdaki metinleri ve bağlantıları yönetin.",
       href: "/admin/home-content",
-      Icon: Settings, // Changed from Home to Settings for more "content management" feel
+      Icon: Settings,
     },
     {
       title: "Hakkımda Sayfası",
@@ -61,9 +61,6 @@ export default function AdminDashboardPage() {
         <div className="flex justify-start gap-2 mb-8">
           <Button variant="outline" onClick={() => router.back()} aria-label="Geri" className="shadow-sm hover:shadow-md transition-shadow">
             <ArrowLeft className="mr-2 h-4 w-4" /> Geri
-          </Button>
-          <Button variant="outline" onClick={() => router.forward()} aria-label="İleri" className="shadow-sm hover:shadow-md transition-shadow">
-            İleri <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
