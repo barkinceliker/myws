@@ -53,7 +53,7 @@ const categoryIcons: Record<string, LucideIcon> = {
 
 const skillCategories = ['Frontend', 'Backend', 'Databases', 'Tools', 'Design'];
 
-export default function SkillsPage() {
+export function SkillsSection() {
   return (
     <>
       <PageHeader

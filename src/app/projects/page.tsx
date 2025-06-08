@@ -42,7 +42,7 @@ const projectsData: Project[] = [
   },
 ];
 
-export default function ProjectsPage() {
+export function ProjectsSection() {
   return (
     <>
       <PageHeader

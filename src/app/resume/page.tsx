@@ -68,7 +68,7 @@ const education: Education[] = [
   },
 ];
 
-export default function ResumePage() {
+export function ResumeSection() {
   return (
     <>
       <PageHeader

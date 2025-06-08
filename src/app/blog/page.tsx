@@ -36,7 +36,7 @@ const blogPostsData: BlogPost[] = [
   },
 ];
 
-export default function BlogPage() {
+export function BlogSection() {
   return (
     <>
       <PageHeader

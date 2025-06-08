@@ -4,11 +4,17 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowRight, Briefcase, FileText, User } from 'lucide-react';
 
-export default function Home() {
+import { AboutSection } from './about/page';
+import { ProjectsSection } from './projects/page';
+import { BlogSection } from './blog/page';
+import { SkillsSection } from './skills/page';
+import { ResumeSection } from './resume/page';
+
+export default function SinglePageLayout() {
   return (
     <>
-      {/* Hero Section */}
-      <section className="relative py-20 md:py-32 bg-gradient-to-br from-primary/10 via-background to-background">
+      {/* Hero Section (Original Home Content) */}
+      <section id="home" className="relative py-20 md:py-32 bg-gradient-to-br from-primary/10 via-background to-background">
         <div className="absolute inset-0 opacity-5" style={{ backgroundImage: "url('/subtle-pattern.svg')" }}></div>
         <div className="container relative text-center">
           <h1 className="font-headline text-5xl md:text-7xl font-bold mb-6 text-primary animate-fade-in-down">
@@ -19,12 +25,12 @@ export default function Home() {
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4 animate-fade-in">
             <Button size="lg" asChild className="transition-transform hover:scale-105">
-              <Link href="/projects">
+              <Link href="#projects"> {/* Updated to scroll to projects section */}
                 View My Work <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
             <Button size="lg" variant="outline" asChild className="transition-transform hover:scale-105">
-              <Link href="/about">
+              <Link href="#about"> {/* Updated to scroll to about section */}
                 Learn More About Me
               </Link>
             </Button>
@@ -32,14 +38,14 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured Sections */}
-      <section className="py-16 md:py-24">
+      {/* Featured Sections (Original Home Content) */}
+      <section id="explore" className="py-16 md:py-24">
         <div className="container">
           <h2 className="font-headline text-3xl md:text-4xl font-bold text-center mb-12 text-primary">
             Explore My World
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
-            <Link href="/about" className="group">
+            <Link href="#about" className="group"> {/* Updated to scroll to about section */}
               <Card className="h-full transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1">
                 <CardHeader>
                   <User className="h-12 w-12 text-accent mb-4" />
@@ -52,7 +58,7 @@ export default function Home() {
                 </CardContent>
               </Card>
             </Link>
-            <Link href="/projects" className="group">
+            <Link href="#projects" className="group"> {/* Updated to scroll to projects section */}
               <Card className="h-full transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1">
                 <CardHeader>
                   <Briefcase className="h-12 w-12 text-accent mb-4" />
@@ -65,7 +71,7 @@ export default function Home() {
                 </CardContent>
               </Card>
             </Link>
-            <Link href="/blog" className="group">
+            <Link href="#blog" className="group"> {/* Updated to scroll to blog section */}
               <Card className="h-full transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1">
                 <CardHeader>
                   <FileText className="h-12 w-12 text-accent mb-4" />
@@ -82,8 +88,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Call to Action */}
-      <section className="py-16 md:py-24 bg-secondary/50">
+      {/* Call to Action (Original Home Content) */}
+      <section id="contact" className="py-16 md:py-24 bg-secondary/50">
         <div className="container text-center">
           <h2 className="font-headline text-3xl md:text-4xl font-bold mb-6 text-primary">
             Ready to Collaborate?
@@ -91,10 +97,36 @@ export default function Home() {
           <p className="text-lg text-foreground mb-8 max-w-xl mx-auto">
             I&apos;m always excited to discuss new projects and opportunities. Let&apos;s connect!
           </p>
+          {/* Consider updating this button's action, e.g., to a mailto link or contact form section */}
           <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 transition-transform hover:scale-105">
             Get In Touch
           </Button>
         </div>
+      </section>
+
+      {/* About Section */}
+      <section id="about">
+        <AboutSection />
+      </section>
+
+      {/* Projects Section */}
+      <section id="projects">
+        <ProjectsSection />
+      </section>
+
+      {/* Blog Section */}
+      <section id="blog">
+        <BlogSection />
+      </section>
+
+      {/* Skills Section */}
+      <section id="skills">
+        <SkillsSection />
+      </section>
+
+      {/* Resume Section */}
+      <section id="resume">
+        <ResumeSection />
       </section>
     </>
   );

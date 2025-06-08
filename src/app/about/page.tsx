@@ -3,7 +3,7 @@ import { PageHeader } from '@/components/page-header';
 import { Card, CardContent } from '@/components/ui/card';
 import { Award, Target, Users } from 'lucide-react';
 
-export default function AboutPage() {
+export function AboutSection() {
   return (
     <>
       <PageHeader
