@@ -1,3 +1,4 @@
+
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { type LucideIcon } from 'lucide-react';
@@ -15,15 +16,22 @@ interface SkillItemProps {
 
 export function SkillItem({ skill }: SkillItemProps) {
   return (
-    <Card className="shadow-md hover:shadow-lg transition-shadow">
+    <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 h-full flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-lg font-medium font-headline">{skill.name}</CardTitle>
         {skill.Icon && <skill.Icon className="h-6 w-6 text-accent" />}
       </CardHeader>
-      <CardContent>
-        <Progress value={skill.proficiency} aria-label={`${skill.name} proficiency: ${skill.proficiency}%`} className="h-3 mb-1" />
-        <p className="text-xs text-muted-foreground">{skill.proficiency}% Proficient</p>
+      <CardContent className="flex flex-col flex-grow justify-between">
+        <div>
+          <Progress value={skill.proficiency} aria-label={`${skill.name} proficiency: ${skill.proficiency}%`} className="h-3 mb-2" />
+        </div>
+        <div className="flex justify-between items-center mt-2">
+          <span className="text-xs text-muted-foreground">Proficiency</span>
+          <span className="text-sm font-semibold text-primary">{skill.proficiency}%</span>
+        </div>
       </CardContent>
     </Card>
   );
 }
+
+    
